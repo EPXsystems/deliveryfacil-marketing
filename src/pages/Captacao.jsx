@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   Search, MapPin, Phone, Star, Globe, ExternalLink,
-  Plus, Loader2, AlertCircle, CheckCircle2, ChevronDown,
+  Plus, Loader2, AlertCircle, CheckCircle2, ChevronDown, Bike,
 } from 'lucide-react'
 import { scrapeMaps } from '../api'
 
@@ -22,6 +22,7 @@ export default function Captacao() {
   const [categoria, setCategoria]   = useState('')
   const [cidade, setCidade]         = useState('')
   const [bairro, setBairro]         = useState('')
+  const [delivery, setDelivery]     = useState(false)
   const [quantidade, setQuantidade] = useState(10)
   const [leads, setLeads]           = useState([])
   const [loading, setLoading]       = useState(false)
@@ -40,9 +41,10 @@ export default function Captacao() {
     setDuplicatas(0)
 
     try {
+      const base = delivery ? `${categoria} delivery` : categoria
       const query = bairro.trim()
-        ? `${categoria} em ${bairro.trim()} ${cidade}`
-        : `${categoria} em ${cidade}`
+        ? `${base} em ${bairro.trim()} ${cidade}`
+        : `${base} em ${cidade}`
 
       const data = await scrapeMaps({ categoria: query, cidade, quantidade })
 
@@ -133,6 +135,24 @@ export default function Captacao() {
             />
           </div>
 
+          {/* Delivery toggle */}
+          <div>
+            <label className="text-[#666] text-xs font-medium block mb-1.5">Delivery</label>
+            <button
+              type="button"
+              disabled={loading}
+              onClick={() => setDelivery(d => !d)}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
+                delivery
+                  ? 'bg-[#FF4D1C]/15 border-[#FF4D1C]/40 text-[#FF4D1C]'
+                  : 'bg-[#111111] border-[#1f1f1f] text-[#666] hover:text-white'
+              }`}
+            >
+              <Bike size={15} />
+              {delivery ? 'Ativo' : 'Incluir'}
+            </button>
+          </div>
+
           {/* Quantidade */}
           <div>
             <label className="text-[#666] text-xs font-medium block mb-1.5">Quantidade</label>
@@ -206,7 +226,7 @@ export default function Captacao() {
             <div className="flex items-center gap-3 mb-4">
               <p className="text-[#666] text-sm">
                 <span className="text-white font-semibold">{leads.length}</span> novos leads
-                {' '}— <span className="text-[#FF4D1C]">{categoria}</span> em <span className="text-[#FF4D1C]">{bairro ? `${bairro}, ` : ''}{cidade}</span>
+                {' '}— <span className="text-[#FF4D1C]">{categoria}{delivery ? ' delivery' : ''}</span> em <span className="text-[#FF4D1C]">{bairro ? `${bairro}, ` : ''}{cidade}</span>
               </p>
               {duplicatas > 0 && (
                 <span className="text-xs text-[#555] bg-[#1a1a1a] border border-[#2a2a2a] px-2 py-1 rounded-lg">
