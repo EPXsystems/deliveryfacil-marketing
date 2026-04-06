@@ -4,7 +4,7 @@ import {
   Plus, Loader2, AlertCircle, CheckCircle2
 } from 'lucide-react'
 
-const SCRAPER_URL = 'http://187.77.246.246:3001'
+const SCRAPER_URL = 'https://salad-dispatched-dry-gets.trycloudflare.com'
 const QUANTITIES = [10, 20, 50]
 
 export default function Captacao() {
