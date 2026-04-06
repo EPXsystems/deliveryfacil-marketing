@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
+import Captacao from './pages/Captacao'
 import Pipeline from './pages/Pipeline'
 import Leads from './pages/Leads'
-import Agents from './pages/Agents'
-import Captacao from './pages/Captacao'
+import Conversas from './pages/Conversas'
+import Agente from './pages/Agente'
+import Configuracoes from './pages/Configuracoes'
 
 export default function App() {
   return (
@@ -12,11 +14,13 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<Navigate to="/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="pipeline" element={<Pipeline />} />
-          <Route path="leads" element={<Leads />} />
-          <Route path="captacao" element={<Captacao />} />
-          <Route path="agents" element={<Agents />} />
+          <Route path="dashboard"     element={<Dashboard />} />
+          <Route path="captacao"      element={<Captacao />} />
+          <Route path="pipeline"      element={<Pipeline />} />
+          <Route path="leads"         element={<Leads />} />
+          <Route path="conversas"     element={<Conversas />} />
+          <Route path="agente"        element={<Agente />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
       </Routes>
     </BrowserRouter>

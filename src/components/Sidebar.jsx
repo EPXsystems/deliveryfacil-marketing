@@ -6,14 +6,18 @@ import {
   Bot,
   Zap,
   Crosshair,
+  MessageCircle,
+  Settings,
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/pipeline', icon: KanbanSquare, label: 'Pipeline' },
-  { to: '/leads', icon: Users, label: 'Leads' },
-  { to: '/captacao', icon: Crosshair, label: 'Captação' },
-  { to: '/agents', icon: Bot, label: 'Agentes' },
+  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/captacao',       icon: Crosshair,       label: 'Captação' },
+  { to: '/pipeline',       icon: KanbanSquare,    label: 'Pipeline' },
+  { to: '/leads',          icon: Users,           label: 'Leads' },
+  { to: '/conversas',      icon: MessageCircle,   label: 'Conversas' },
+  { to: '/agente',         icon: Bot,             label: 'Agente' },
+  { to: '/configuracoes',  icon: Settings,        label: 'Configurações' },
 ]
 
 export default function Sidebar() {
