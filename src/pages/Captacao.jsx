@@ -7,7 +7,7 @@ import { scrapeMaps } from '../api'
 
 const CATEGORIAS = [
   'Pizzaria', 'Hamburgueria', 'Sushi', 'Lanchonete', 'Churrascaria',
-  'Açaí', 'Pastelaria', 'Esfiharia', 'Cafeteria', 'Restaurante',
+  'Açaí', 'Pastelaria', 'Esfiharia', 'Cafeteria', 'Restaurante', 'Delivery',
 ]
 
 const CIDADES = [
