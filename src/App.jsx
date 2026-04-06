@@ -4,6 +4,7 @@ import Dashboard from './pages/Dashboard'
 import Pipeline from './pages/Pipeline'
 import Leads from './pages/Leads'
 import Agents from './pages/Agents'
+import Captacao from './pages/Captacao'
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="pipeline" element={<Pipeline />} />
           <Route path="leads" element={<Leads />} />
+          <Route path="captacao" element={<Captacao />} />
           <Route path="agents" element={<Agents />} />
         </Route>
       </Routes>

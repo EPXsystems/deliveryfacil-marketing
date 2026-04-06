@@ -5,12 +5,14 @@ import {
   Users,
   Bot,
   Zap,
+  Crosshair,
 } from 'lucide-react'
 
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/pipeline', icon: KanbanSquare, label: 'Pipeline' },
   { to: '/leads', icon: Users, label: 'Leads' },
+  { to: '/captacao', icon: Crosshair, label: 'Captação' },
   { to: '/agents', icon: Bot, label: 'Agentes' },
 ]
 
