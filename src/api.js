@@ -35,3 +35,33 @@ export async function scrapeMaps({ categoria, cidade, quantidade }) {
   if (!data.success) throw new Error(data.error)
   return data
 }
+
+// ── WhatsApp ──────────────────────────────────────────────
+export async function waStatus() {
+  const res = await fetch(`${API}/whatsapp/status`)
+  return res.json()
+}
+
+export async function waConnect() {
+  const res = await fetch(`${API}/whatsapp/connect`, { method: 'POST' })
+  return res.json()
+}
+
+export async function waQRCode() {
+  const res = await fetch(`${API}/whatsapp/qrcode`)
+  return res.json()
+}
+
+export async function waDisconnect() {
+  const res = await fetch(`${API}/whatsapp/disconnect`, { method: 'DELETE' })
+  return res.json()
+}
+
+export async function waSend(numero, mensagem) {
+  const res = await fetch(`${API}/whatsapp/send`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ numero, mensagem }),
+  })
+  return res.json()
+}

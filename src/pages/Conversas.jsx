@@ -1,5 +1,7 @@
-import { useState } from 'react'
-import { Phone, UserCheck, Send, Bot, User, Search, Circle } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Phone, UserCheck, Send, Bot, User, Search, Circle, WifiOff, Loader2 } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { waStatus } from '../api'
 
 const MOCK_CONVERSAS = [
   {
@@ -103,10 +105,59 @@ function Toggle({ active, onChange }) {
 }
 
 export default function Conversas() {
+  const navigate = useNavigate()
+  const [waPhase, setWaPhase]       = useState('loading') // 'loading' | 'disconnected' | 'connected'
+  const pollRef                     = useRef(null)
+
   const [conversas, setConversas]   = useState(MOCK_CONVERSAS)
   const [ativa, setAtiva]           = useState(MOCK_CONVERSAS[0])
   const [input, setInput]           = useState('')
   const [search, setSearch]         = useState('')
+
+  // Checa status WhatsApp ao montar e a cada 10s
+  useEffect(() => {
+    async function check() {
+      try {
+        const s = await waStatus()
+        setWaPhase(s.status === 'connected' ? 'connected' : 'disconnected')
+      } catch {
+        setWaPhase('disconnected')
+      }
+    }
+    check()
+    pollRef.current = setInterval(check, 10000)
+    return () => clearInterval(pollRef.current)
+  }, [])
+
+  // ── Tela de WhatsApp desconectado ────────────────────────
+  if (waPhase === 'loading') return (
+    <div className="flex items-center justify-center h-screen bg-[#0D0D0D]">
+      <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+    </div>
+  )
+
+  if (waPhase === 'disconnected') return (
+    <div className="flex items-center justify-center h-screen bg-[#0D0D0D]">
+      <div className="flex flex-col items-center gap-5 text-center max-w-sm px-6">
+        <div className="w-20 h-20 rounded-3xl bg-[#1a1a1a] border border-[#2a2a2a] flex items-center justify-center">
+          <WifiOff size={36} className="text-[#444]" />
+        </div>
+        <div>
+          <p className="text-white text-lg font-bold mb-2">WhatsApp não conectado</p>
+          <p className="text-[#555] text-sm leading-relaxed">
+            Conecte seu WhatsApp para visualizar e gerenciar suas conversas com leads.
+          </p>
+        </div>
+        <button
+          onClick={() => navigate('/configuracoes')}
+          className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors"
+        >
+          Conectar WhatsApp
+        </button>
+        <p className="text-[#333] text-xs">Verificando a cada 10 segundos...</p>
+      </div>
+    </div>
+  )
 
   const filtradas = conversas.filter(c =>
     c.nome.toLowerCase().includes(search.toLowerCase()) ||

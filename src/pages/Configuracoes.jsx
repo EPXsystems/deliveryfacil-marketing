@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   Smartphone, Bot, Bell, CreditCard,
-  CheckCircle2, AlertCircle, QrCode, Wifi, WifiOff,
-  ChevronDown,
+  CheckCircle2, QrCode, Wifi, WifiOff,
+  ChevronDown, Loader2, RefreshCw,
 } from 'lucide-react'
+import { waStatus, waConnect, waQRCode, waDisconnect } from '../api'
 
 const TABS = [
   { id: 'whatsapp',      label: 'WhatsApp',      icon: Smartphone },
@@ -72,71 +73,224 @@ function SaveButton({ onClick }) {
 }
 
 // ─── Aba WhatsApp ──────────────────────────────────────────
+// estados: 'loading' | 'disconnected' | 'connecting' | 'qrcode' | 'connected'
 function TabWhatsApp() {
-  const [conectado, setConectado] = useState(false)
-  const [showQr, setShowQr]       = useState(false)
+  const [phase, setPhase]         = useState('loading')
+  const [qrcode, setQrcode]       = useState(null)
+  const [info, setInfo]           = useState(null)   // { numero, nome, foto }
+  const [connectedAt, setConnectedAt] = useState(null)
+  const [error, setError]         = useState('')
+  const pollRef  = useRef(null)
+  const qrRef    = useRef(null)
 
-  return (
-    <div className="space-y-6">
-      {/* Status */}
-      <div className={`flex items-center justify-between px-5 py-4 rounded-xl border ${
-        conectado ? 'bg-emerald-400/5 border-emerald-400/20' : 'bg-red-400/5 border-red-400/20'
-      }`}>
-        <div className="flex items-center gap-3">
-          {conectado
-            ? <><Wifi size={18} className="text-emerald-400" /><div><p className="text-emerald-400 font-semibold text-sm">WhatsApp conectado</p><p className="text-[#555] text-xs mt-0.5">+55 (51) 99999-0000 · Conectado em 01/04/2026</p></div></>
-            : <><WifiOff size={18} className="text-red-400" /><div><p className="text-red-400 font-semibold text-sm">WhatsApp desconectado</p><p className="text-[#555] text-xs mt-0.5">Escaneie o QR Code para conectar</p></div></>
-          }
-        </div>
-        {conectado ? (
-          <button
-            onClick={() => setConectado(false)}
-            className="text-xs text-red-400 border border-red-400/30 hover:bg-red-400/10 px-4 py-2 rounded-lg transition-colors font-medium"
-          >
-            Desconectar
-          </button>
-        ) : (
-          <button
-            onClick={() => setShowQr(v => !v)}
-            className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors"
-          >
-            <QrCode size={15} />
-            {showQr ? 'Ocultar QR Code' : 'Conectar WhatsApp'}
-          </button>
-        )}
-      </div>
+  // Checa status ao montar
+  useEffect(() => {
+    checkStatus()
+    return () => { clearInterval(pollRef.current); clearInterval(qrRef.current) }
+  }, [])
 
-      {/* QR Code mock */}
-      {showQr && !conectado && (
-        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-6 flex flex-col items-center gap-4">
-          <p className="text-white text-sm font-semibold">Escaneie o QR Code com seu WhatsApp</p>
-          <p className="text-[#555] text-xs text-center max-w-sm">
-            Abra o WhatsApp no seu celular → Menu → Aparelhos conectados → Conectar aparelho → Aponte para o QR Code
-          </p>
-          {/* QR Code placeholder */}
-          <div className="w-48 h-48 bg-white rounded-xl flex items-center justify-center relative overflow-hidden">
-            <div className="grid grid-cols-8 gap-0.5 p-2">
-              {Array.from({ length: 64 }).map((_, i) => (
-                <div
-                  key={i}
-                  className={`w-4 h-4 rounded-sm ${Math.random() > 0.5 ? 'bg-black' : 'bg-white'}`}
-                />
-              ))}
+  async function checkStatus() {
+    try {
+      const s = await waStatus()
+      if (s.status === 'connected') {
+        setInfo({ numero: s.numero, nome: s.nome, foto: s.foto })
+        if (!connectedAt) setConnectedAt(new Date().toLocaleDateString('pt-BR'))
+        setPhase('connected')
+        clearInterval(pollRef.current)
+        clearInterval(qrRef.current)
+      } else {
+        setPhase(p => p === 'qrcode' ? 'qrcode' : 'disconnected')
+      }
+    } catch (e) {
+      setPhase('disconnected')
+    }
+  }
+
+  async function handleConnect() {
+    setError('')
+    setPhase('connecting')
+    try {
+      const res = await waConnect()
+      if (res.status === 'connected') {
+        setInfo({ numero: res.numero, nome: res.nome })
+        setConnectedAt(new Date().toLocaleDateString('pt-BR'))
+        setPhase('connected')
+        return
+      }
+      if (res.qrcode) {
+        setQrcode(res.qrcode)
+        setPhase('qrcode')
+        startPolling()
+        startQRRefresh()
+      } else {
+        throw new Error(res.error || 'Não foi possível obter o QR Code')
+      }
+    } catch (e) {
+      setError(e.message)
+      setPhase('disconnected')
+    }
+  }
+
+  function startPolling() {
+    clearInterval(pollRef.current)
+    pollRef.current = setInterval(async () => {
+      const s = await waStatus().catch(() => ({}))
+      if (s.status === 'connected') {
+        setInfo({ numero: s.numero, nome: s.nome, foto: s.foto })
+        setConnectedAt(new Date().toLocaleDateString('pt-BR'))
+        setPhase('connected')
+        clearInterval(pollRef.current)
+        clearInterval(qrRef.current)
+      }
+    }, 3000)
+  }
+
+  function startQRRefresh() {
+    clearInterval(qrRef.current)
+    qrRef.current = setInterval(async () => {
+      const res = await waQRCode().catch(() => ({}))
+      if (res.qrcode) setQrcode(res.qrcode)
+    }, 30000)
+  }
+
+  async function handleDisconnect() {
+    setPhase('loading')
+    await waDisconnect().catch(() => {})
+    setQrcode(null)
+    setInfo(null)
+    clearInterval(pollRef.current)
+    clearInterval(qrRef.current)
+    setPhase('disconnected')
+  }
+
+  async function handleRefreshQR() {
+    const res = await waQRCode().catch(() => ({}))
+    if (res.qrcode) setQrcode(res.qrcode)
+  }
+
+  // ── Estados de render ─────────────────────────────────
+
+  if (phase === 'loading') return (
+    <div className="flex items-center justify-center py-16">
+      <Loader2 size={24} className="animate-spin text-[#FF4D1C]" />
+    </div>
+  )
+
+  if (phase === 'connected') return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between bg-emerald-400/5 border border-emerald-400/20 rounded-2xl px-5 py-5">
+        <div className="flex items-center gap-4">
+          {info?.foto ? (
+            <img src={info.foto} className="w-12 h-12 rounded-full object-cover" alt="foto" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-emerald-400/20 flex items-center justify-center">
+              <Wifi size={22} className="text-emerald-400" />
             </div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-10 h-10 bg-white border-2 border-[#FF4D1C] rounded-lg flex items-center justify-center">
-                <QrCode size={20} className="text-[#FF4D1C]" />
+          )}
+          <div>
+            <div className="flex items-center gap-2 mb-0.5">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <p className="text-emerald-400 font-bold text-sm">WhatsApp conectado</p>
+            </div>
+            {info?.nome && <p className="text-white text-sm font-medium">{info.nome}</p>}
+            {info?.numero && <p className="text-[#555] text-xs">+55 {info.numero}</p>}
+            {connectedAt && <p className="text-[#444] text-xs mt-0.5">Conectado em {connectedAt}</p>}
+          </div>
+        </div>
+        <button
+          onClick={handleDisconnect}
+          className="text-xs text-red-400 border border-red-400/30 hover:bg-red-400/10 px-4 py-2.5 rounded-lg transition-colors font-semibold"
+        >
+          Desconectar
+        </button>
+      </div>
+      <div className="flex items-center gap-2 bg-[#0D0D0D] border border-[#1f1f1f] rounded-xl px-4 py-3">
+        <CheckCircle2 size={14} className="text-emerald-400" />
+        <p className="text-[#666] text-xs">Instância <span className="text-white font-mono">marketing-os</span> ativa e pronta para enviar mensagens</p>
+      </div>
+    </div>
+  )
+
+  if (phase === 'qrcode') return (
+    <div className="space-y-5">
+      <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-6 flex flex-col items-center gap-4">
+        <div className="text-center">
+          <p className="text-white text-sm font-bold mb-1">Escaneie com seu WhatsApp</p>
+          <p className="text-[#555] text-xs">Abra o WhatsApp → Dispositivos conectados → Conectar dispositivo</p>
+        </div>
+
+        {qrcode ? (
+          <div className="relative">
+            <img
+              src={qrcode}
+              alt="QR Code WhatsApp"
+              className="w-56 h-56 rounded-xl border-4 border-white"
+            />
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-md">
+                <svg viewBox="0 0 32 32" className="w-6 h-6" fill="#25D366">
+                  <path d="M16 0C7.163 0 0 7.163 0 16c0 2.824.736 5.476 2.027 7.776L0 32l8.406-2.004A15.93 15.93 0 0016 32c8.837 0 16-7.163 16-16S24.837 0 16 0zm8.003 22.572c-.336.944-1.967 1.752-2.695 1.86-.685.1-1.55.142-2.5-.157-.576-.185-1.317-.43-2.263-.842-3.983-1.72-6.58-5.724-6.778-5.988-.198-.264-1.62-2.155-1.62-4.113s1.026-2.918 1.39-3.314c.364-.396.793-.495.058-.495h.001c.165 0 .33.002.475.008.152.007.355-.058.556.425.208.503.707 1.737.77 1.863.062.126.103.274.02.44-.082.165-.124.267-.247.412-.124.145-.26.324-.372.435-.124.124-.252.258-.108.506.144.247.64 1.056 1.373 1.712.944.84 1.74 1.1 1.987 1.226.247.124.39.103.535-.062.145-.165.621-.724.787-.972.165-.247.33-.206.556-.124.227.083 1.44.68 1.687.804.247.124.412.185.474.289.062.103.062.6-.274 1.544z"/>
+                </svg>
               </div>
             </div>
           </div>
-          <p className="text-[#444] text-xs">QR Code expira em 60 segundos</p>
+        ) : (
+          <div className="w-56 h-56 rounded-xl bg-[#0D0D0D] border border-[#2a2a2a] flex items-center justify-center">
+            <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <p className="text-[#444] text-xs">QR Code atualiza automaticamente a cada 30s</p>
           <button
-            onClick={() => setConectado(true)}
-            className="text-xs text-[#FF4D1C] underline underline-offset-2"
+            onClick={handleRefreshQR}
+            className="flex items-center gap-1 text-[#FF4D1C] hover:text-[#ff6a42] text-xs transition-colors"
           >
-            Simular conexão (dev)
+            <RefreshCw size={11} /> Atualizar
           </button>
         </div>
+
+        <div className="flex items-center gap-2 text-yellow-400/80 text-xs bg-yellow-400/5 border border-yellow-400/15 rounded-lg px-3 py-2">
+          <Loader2 size={11} className="animate-spin" />
+          Aguardando leitura do QR Code...
+        </div>
+      </div>
+    </div>
+  )
+
+  if (phase === 'connecting') return (
+    <div className="flex flex-col items-center justify-center py-16 gap-4">
+      <Loader2 size={32} className="animate-spin text-[#FF4D1C]" />
+      <div className="text-center">
+        <p className="text-white text-sm font-semibold">Gerando QR Code...</p>
+        <p className="text-[#444] text-xs mt-1">Criando instância marketing-os na Evolution API</p>
+      </div>
+    </div>
+  )
+
+  // disconnected
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl px-5 py-5">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-[#1f1f1f] flex items-center justify-center">
+            <WifiOff size={22} className="text-[#555]" />
+          </div>
+          <div>
+            <p className="text-[#888] font-semibold text-sm">WhatsApp desconectado</p>
+            <p className="text-[#444] text-xs mt-0.5">Conecte para enviar mensagens e usar o agente</p>
+          </div>
+        </div>
+        <button
+          onClick={handleConnect}
+          className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors"
+        >
+          <QrCode size={15} />
+          Conectar WhatsApp
+        </button>
+      </div>
+      {error && (
+        <p className="text-red-400 text-xs bg-red-400/5 border border-red-400/20 rounded-lg px-4 py-2.5">{error}</p>
       )}
     </div>
   )
