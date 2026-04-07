@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import {
   Bot, MessageSquare, ArrowRight, CheckCircle2, PhoneCall,
-  Activity, BookOpen, ToggleLeft, ToggleRight, Zap, Edit3,
-  ChevronDown, ChevronUp, AlertCircle, TrendingUp,
+  Activity, BookOpen, Zap, Edit3,
+  ChevronDown, ChevronUp, TrendingUp, Loader2, XCircle, Play,
 } from 'lucide-react'
+import { API } from '../api'
 
 // ── Toggle ────────────────────────────────────────────────
 function Toggle({ active, onChange, size = 'md' }) {
@@ -102,6 +103,54 @@ export default function Agente() {
   const [base, setBase]           = useState(BASE_INICIAL)
   const [baseOpen, setBaseOpen]   = useState(false)
 
+  // Execução real
+  const [executando, setExecutando] = useState(false)
+  const [progresso, setProgresso]   = useState([])   // { lead, telefone, status, erro }
+  const [resumo, setResumo]         = useState(null)  // { enviados, erros, total }
+
+  async function executarAgente() {
+    if (executando) return
+    setExecutando(true)
+    setProgresso([])
+    setResumo(null)
+
+    try {
+      const res = await fetch(`${API}/agente/executar`, { method: 'POST' })
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const evt = JSON.parse(line.slice(6))
+            if (evt.tipo === 'progresso') {
+              setProgresso(prev => {
+                const exists = prev.find(p => p.lead === evt.lead)
+                if (exists) return prev.map(p => p.lead === evt.lead ? { ...p, ...evt } : p)
+                return [...prev, evt]
+              })
+            } else if (evt.tipo === 'fim') {
+              setResumo(evt)
+            } else if (evt.tipo === 'erro') {
+              setResumo({ erro: evt.msg })
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      setResumo({ erro: e.message })
+    }
+    setExecutando(false)
+  }
+
   const metricas = [
     { label: 'Mensagens hoje',      value: 24,    cor: 'text-[#FF4D1C]' },
     { label: 'Taxa de resposta',    value: '34%', cor: 'text-yellow-400' },
@@ -147,6 +196,64 @@ export default function Agente() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Executar agente */}
+        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-white text-sm font-semibold">Disparar Ciclo Agora</h2>
+              <p className="text-[#444] text-xs mt-0.5">Envia mensagem D+0 para todos os leads com status "Captado"</p>
+            </div>
+            <button
+              onClick={executarAgente}
+              disabled={executando || !ativo}
+              className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ${
+                executando || !ativo
+                  ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
+                  : 'bg-[#FF4D1C] hover:bg-[#e63d0e] text-white'
+              }`}
+            >
+              {executando ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+              {executando ? 'Executando...' : 'Executar agora'}
+            </button>
+          </div>
+
+          {/* Progresso em tempo real */}
+          {(executando || progresso.length > 0) && (
+            <div className="border border-[#1f1f1f] rounded-xl overflow-hidden">
+              {/* Resumo */}
+              {resumo && (
+                <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${
+                  resumo.erro ? 'bg-red-400/5' : 'bg-emerald-400/5'
+                }`}>
+                  {resumo.erro
+                    ? <><XCircle size={14} className="text-red-400" /><span className="text-red-400 text-xs font-semibold">{resumo.erro}</span></>
+                    : <><CheckCircle2 size={14} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">{resumo.enviados} mensagens enviadas · {resumo.erros} erros</span></>
+                  }
+                </div>
+              )}
+              {executando && !resumo && (
+                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF4D1C]/5">
+                  <Loader2 size={12} className="animate-spin text-[#FF4D1C]" />
+                  <span className="text-[#FF4D1C] text-xs font-semibold">Enviando mensagens...</span>
+                </div>
+              )}
+              {/* Itens */}
+              <div className="max-h-52 overflow-y-auto">
+                {progresso.map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#0D0D0D] last:border-0">
+                    {p.status === 'enviando' && <Loader2 size={11} className="animate-spin text-[#FF4D1C] flex-shrink-0" />}
+                    {p.status === 'ok'       && <CheckCircle2 size={11} className="text-emerald-400 flex-shrink-0" />}
+                    {p.status === 'erro'     && <XCircle size={11} className="text-red-400 flex-shrink-0" />}
+                    <span className="text-white text-xs font-medium flex-1 truncate">{p.lead}</span>
+                    <span className="text-[#444] text-xs font-mono flex-shrink-0">{p.telefone}</span>
+                    {p.erro && <span className="text-red-400 text-[10px] flex-shrink-0 max-w-[120px] truncate">{p.erro}</span>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Fluxo de abordagem */}
