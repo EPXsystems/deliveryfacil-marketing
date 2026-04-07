@@ -6,6 +6,7 @@ import {
   Clock, Target, Pause, Eye, EyeOff,
 } from 'lucide-react'
 import { API } from '../api'
+import TesteBanner from '../components/TesteBanner'
 
 // ── Toggle ────────────────────────────────────────────────
 function Toggle({ active, onChange, size = 'md' }) {
@@ -96,8 +97,10 @@ function ProgressIcon({ status }) {
 }
 
 export default function Agente() {
-  const [ativo, setAtivo]       = useState(true)
-  const [msgs, setMsgs]         = useState(INITIAL_MSGS)
+  const [modoTeste, setModoTeste]   = useState(false)
+  const [testNumber, setTestNumber] = useState('5551981538335')
+  const [ativo, setAtivo]           = useState(true)
+  const [msgs, setMsgs]             = useState(INITIAL_MSGS)
   const [base, setBase]         = useState(BASE_INICIAL)
   const [baseOpen, setBaseOpen] = useState(false)
   const [cfgOpen, setCfgOpen]   = useState(false)
@@ -126,6 +129,10 @@ export default function Agente() {
 
   // Carrega config, meta e logs ao montar
   useEffect(() => {
+    fetch(`${API}/teste/status`)
+      .then(r => r.json())
+      .then(d => { if (d.success) { setModoTeste(d.modo_teste); setTestNumber(d.test_number || '5551981538335') } })
+      .catch(() => {})
     fetchMeta()
     fetchLogs()
     fetch(`${API}/agente/config`)
@@ -257,6 +264,9 @@ export default function Agente() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Modo Teste */}
+      {modoTeste && <TesteBanner testNumber={testNumber} />}
+
       {/* Header */}
       <div className="px-6 py-5 border-b border-[#1f1f1f] flex items-center justify-between flex-shrink-0">
         <div>

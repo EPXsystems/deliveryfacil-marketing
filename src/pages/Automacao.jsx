@@ -6,6 +6,7 @@ import {
   AlertCircle, Zap,
 } from 'lucide-react'
 import { API } from '../api'
+import TesteBanner from '../components/TesteBanner'
 
 // ── Toggle ────────────────────────────────────────────────
 function Toggle({ active, onChange, size = 'md' }) {
@@ -53,9 +54,11 @@ function FunilStep({ label, value, pct, cor, isLast }) {
 }
 
 export default function Automacao() {
-  const [status, setStatus]       = useState(null)
-  const [ativo, setAtivo]         = useState(false)
-  const [loading, setLoading]     = useState(true)
+  const [modoTeste, setModoTeste]   = useState(false)
+  const [testNumber, setTestNumber] = useState('5551981538335')
+  const [status, setStatus]         = useState(null)
+  const [ativo, setAtivo]           = useState(false)
+  const [loading, setLoading]       = useState(true)
 
   // Cards data
   const [ciclos, setCiclos]       = useState([])
@@ -78,6 +81,10 @@ export default function Automacao() {
   const scrollRef = useRef(null)
 
   useEffect(() => {
+    fetch(`${API}/teste/status`)
+      .then(r => r.json())
+      .then(d => { if (d.success) { setModoTeste(d.modo_teste); setTestNumber(d.test_number || '5551981538335') } })
+      .catch(() => {})
     fetchAll()
   }, [])
 
@@ -214,6 +221,9 @@ export default function Automacao() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Modo Teste */}
+      {modoTeste && <TesteBanner testNumber={testNumber} />}
+
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="px-6 py-5 border-b border-[#1f1f1f] flex items-center justify-between flex-shrink-0">
         <div>
