@@ -25,11 +25,11 @@ export async function deleteLead(id) {
   return data
 }
 
-export async function scrapeMaps({ categoria, cidade, quantidade }) {
+export async function scrapeMaps({ categoria, cidade, bairro, quantidade }) {
   const res = await fetch(`${API}/scrape/maps`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ categoria, cidade, quantidade }),
+    body: JSON.stringify({ categoria, cidade, bairro, quantidade }),
   })
   const data = await res.json()
   if (!data.success) throw new Error(data.error)

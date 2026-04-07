@@ -42,11 +42,12 @@ export default function Captacao() {
 
     try {
       const base = delivery ? `${categoria} delivery` : categoria
-      const query = bairro.trim()
-        ? `${base} em ${bairro.trim()} ${cidade}`
-        : `${base} em ${cidade}`
-
-      const data = await scrapeMaps({ categoria: query, cidade, quantidade })
+      const data = await scrapeMaps({
+        categoria: base,
+        cidade,
+        bairro: bairro.trim() || undefined,
+        quantidade,
+      })
 
       setLeads(data.leads || [])
       setDuplicatas(data.duplicatas || 0)
