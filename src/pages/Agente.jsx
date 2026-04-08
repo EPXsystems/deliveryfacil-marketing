@@ -74,17 +74,17 @@ function FluxoStep({ icon: Icon, cor, label, children, last = false }) {
 }
 
 const INITIAL_MSGS = {
-  d0: 'Olá! Vi que vocês estão entre os restaurantes mais bem avaliados da cidade! Sou do Delivery Fácil — sistema de delivery próprio que aumenta em média 30% o faturamento sem pagar comissão por pedido. Tem 2 minutinhos para eu te mostrar como funciona?',
-  d1: 'Oi! Passando para retomar nosso contato. Sei que é corrido no dia a dia de restaurante. O Delivery Fácil pode realmente fazer diferença no seu faturamento. Posso te mostrar em 5 minutos?',
-  d3: 'Última tentativa de contato! Caso queira conhecer como o Delivery Fácil está ajudando restaurantes como o seu a venderem mais com delivery próprio, é só me responder. Se não for o momento, sem problema — guardamos seu contato para quando precisar!',
+  d0: 'Oi! Vi que vocês estão entre os mais bem avaliados da cidade 👊 | Sou o Thomas, do Delivery Fácil. | Você paga comissão pra alguma plataforma hoje, tipo iFood ou Rappi?',
+  d1: 'Oi, passando para retomar o papo! 😄 | Sei que o dia a dia de delivery é corrido — mas se a taxa de plataforma incomoda, vale 5 minutos pra eu te mostrar como funciona. | É só me responder quando puder.',
+  d3: 'Última tentativa de contato! Se quiser conhecer como o Delivery Fácil tá ajudando restaurantes a venderem com canal próprio, sem pagar comissão, é só me chamar. | Se não for o momento, sem problema — fico por aqui quando precisar. 👊',
 }
 
 const BASE_INICIAL = {
-  produto:      'Delivery Fácil é um sistema completo de gestão e delivery para restaurantes. Permite criar cardápio digital, receber pedidos pelo WhatsApp e app próprio, sem pagar comissão por pedido.',
-  features:     '• Cardápio digital personalizado\n• Pedidos via WhatsApp automatizado\n• App próprio para Android e iOS\n• Integração com iFood e Rappi\n• Relatórios de vendas em tempo real\n• Programa de fidelidade integrado',
-  preco:        'Plano Básico: R$ 197/mês. Plano Pro: R$ 397/mês. Sem comissão por pedido, sem taxa de adesão.',
-  diferenciais: 'Zero comissão por pedido (iFood cobra até 30%), canal de venda próprio, suporte 24/7, onboarding gratuito, cancelamento sem multa.',
-  objecoes:     'Já uso iFood: Complementamos o iFood — você tem canal próprio sem pagar 30% de comissão.\nCaro demais: Um pedido a mais por dia já paga o sistema.\nNão tenho tempo: Setup em 2 horas, nossa equipe faz tudo por você.',
+  produto:      'Delivery Fácil resolve o maior problema de quem faz delivery no Brasil: dependência de plataformas como iFood, Rappi e Anotaí que cobram 12% a 30% de comissão por pedido. Com o Delivery Fácil, você cria seu canal próprio de vendas e recebe 100% do valor de cada pedido.',
+  features:     'Cardápio digital próprio com link direto (bonito, rápido, no celular do cliente). Pedidos recebidos direto no WhatsApp — zero comissão. CRM com histórico completo de cada cliente. Disparo de campanhas no WhatsApp (promoções, reativação de clientes sumidos). Automação de atendimento (confirmação de pedido, status, respostas automáticas). Relatórios e controle financeiro.',
+  preco:        'Trial de 15 dias grátis, sem cartão, sem compromisso. Link de cadastro: https://deliveryfacil.ai/',
+  diferenciais: 'Zero comissão por pedido (iFood cobra até 30%). Canal de venda próprio com link do cardápio para WhatsApp e redes sociais. CRM de clientes integrado. Campanhas de reativação via WhatsApp. Automação de atendimento.',
+  objecoes:     'Já uso iFood: O Delivery Fácil não substitui o iFood — você cria um canal próprio paralelo e para de pagar comissão nos pedidos diretos.\nAchei caro: Se você faz R$8k por mês no iFood, tá pagando até R$2.400 de comissão. O Delivery Fácil custa uma fração disso.\nNão tenho tempo: Cadastro leva menos de 5 minutos. Qualquer dúvida tô junto.',
 }
 
 // ── Status icon do item de progresso ─────────────────────
@@ -271,7 +271,7 @@ export default function Agente() {
       <div className="px-6 py-5 border-b border-[#1f1f1f] flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-xl font-bold text-white">Agente SDR</h1>
-          <p className="text-[#555] text-sm mt-0.5">Lucas — IA que aborda leads e qualifica automaticamente</p>
+          <p className="text-[#555] text-sm mt-0.5">Thomas — IA que aborda leads e qualifica automaticamente</p>
         </div>
         <div className="flex items-center gap-4">
           <span className={`text-sm font-semibold ${ativo ? 'text-emerald-400' : 'text-[#555]'}`}>
@@ -478,7 +478,7 @@ export default function Agente() {
                   <Toggle active={cfg.usar_ia} onChange={() => setCfg(c => ({ ...c, usar_ia: !c.usar_ia }))} />
                   <div>
                     <p className="text-white text-xs font-medium">Personalizar com IA</p>
-                    <p className="text-[#444] text-[10px]">Claude Haiku gera mensagem única por lead</p>
+                    <p className="text-[#444] text-[10px]">Thomas (Claude) gera mensagem personalizada por lead</p>
                   </div>
                 </div>
                 {cfg.usar_ia && (
@@ -563,7 +563,7 @@ export default function Agente() {
                   <CheckCircle2 size={13} className="text-emerald-400" />
                   <span className="text-emerald-400 text-xs font-semibold">Interessado</span>
                 </div>
-                <p className="text-[#555] text-xs leading-relaxed">Lucas qualifica → envia link do trial → tenta fechar</p>
+                <p className="text-[#555] text-xs leading-relaxed">Thomas qualifica → envia link do trial → tenta fechar</p>
               </div>
               <div className="bg-[#FF4D1C]/5 border border-[#FF4D1C]/20 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1.5">
@@ -591,7 +591,7 @@ export default function Agente() {
             <div className="flex items-center gap-2">
               <BookOpen size={15} className="text-[#FF4D1C]" />
               <h2 className="text-white text-sm font-semibold">Base de Conhecimento</h2>
-              <span className="text-[10px] text-[#555]">— Lucas usa isso para responder dúvidas</span>
+              <span className="text-[10px] text-[#555]">— Thomas usa isso para responder dúvidas</span>
             </div>
             {baseOpen ? <ChevronUp size={15} className="text-[#444]" /> : <ChevronDown size={15} className="text-[#444]" />}
           </button>

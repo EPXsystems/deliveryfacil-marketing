@@ -66,7 +66,7 @@ export default function Automacao() {
 
   // Config
   const [cfg, setCfg] = useState({
-    meta_dia: 10, delay_min_seg: 60, delay_max_seg: 180,
+    meta_dia: 10, delay_min_seg: 300, delay_max_seg: 720,
     horario_inicio: '08:00', horario_fim: '20:00',
     remarketing_ativo: true,
   })
@@ -379,18 +379,18 @@ export default function Automacao() {
                 <div>
                   <label className="text-[#666] text-xs font-medium block mb-1.5">Delay mínimo (min)</label>
                   <input
-                    type="number" min={1} max={30}
+                    type="number" min={3} max={30}
                     value={Math.round(cfg.delay_min_seg / 60)}
-                    onChange={e => setCfg(c => ({ ...c, delay_min_seg: +e.target.value * 60 }))}
+                    onChange={e => setCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
                     className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
                   />
                 </div>
                 <div>
                   <label className="text-[#666] text-xs font-medium block mb-1.5">Delay máximo (min)</label>
                   <input
-                    type="number" min={1} max={60}
+                    type="number" min={3} max={60}
                     value={Math.round(cfg.delay_max_seg / 60)}
-                    onChange={e => setCfg(c => ({ ...c, delay_max_seg: +e.target.value * 60 }))}
+                    onChange={e => setCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
                     className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
                   />
                 </div>

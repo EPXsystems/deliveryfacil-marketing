@@ -1,31 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   Phone, Send, Search, WifiOff, Loader2, RefreshCw,
-  Trash2, AlertTriangle, X, CheckCircle2,
+  Trash2, AlertTriangle, X, CheckCircle2, MessageSquare,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { API, waStatus, waSend } from '../api'
 
 // ── Helpers ───────────────────────────────────────────────
-function extractText(msg) {
-  if (!msg) return ''
-  const m = msg.message || {}
-  return (
-    m.conversation ||
-    m.extendedTextMessage?.text ||
-    m.imageMessage?.caption ||
-    m.videoMessage?.caption ||
-    m.templateMessage?.hydratedFourRowTemplate?.hydratedContentText ||
-    m.buttonsMessage?.contentText ||
-    m.listMessage?.description ||
-    '[mídia]'
-  )
-}
-
-function formatJid(jid = '') {
-  const num = jid.replace('@s.whatsapp.net', '').replace('@lid', '').replace('@c.us', '')
+function formatNumero(numero = '') {
+  const num = numero.replace(/\D/g, '')
   if (num.startsWith('55') && num.length >= 12) {
-    const ddd = num.slice(2, 4)
+    const ddd  = num.slice(2, 4)
     const rest = num.slice(4)
     return `(${ddd}) ${rest.length === 9 ? rest.slice(0, 5) + '-' + rest.slice(5) : rest.slice(0, 4) + '-' + rest.slice(4)}`
   }
@@ -34,7 +19,7 @@ function formatJid(jid = '') {
 
 function timeLabel(ts) {
   if (!ts) return ''
-  const d = new Date(typeof ts === 'number' ? ts * 1000 : ts)
+  const d   = new Date(ts)
   const now = new Date()
   if (d.getDate() === now.getDate() && (now - d) < 86400000)
     return d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
@@ -101,27 +86,22 @@ export default function Conversas() {
   const pollRef   = useRef(null)
   const bottomRef = useRef(null)
 
-  const [waPhase, setWaPhase]       = useState('loading')
-  const [chats, setChats]           = useState([])
-  const [ativa, setAtiva]           = useState(null)
-  const [mensagens, setMensagens]   = useState([])
-  const [input, setInput]           = useState('')
-  const [search, setSearch]         = useState('')
-  const [loadingChats, setLoadingChats] = useState(false)
-  const [loadingMsgs, setLoadingMsgs]   = useState(false)
-  const [sending, setSending]       = useState(false)
-  const [hoveredJid, setHoveredJid] = useState(null)
+  const [waPhase, setWaPhase]         = useState('loading')
+  const [conversas, setConversas]     = useState([])
+  const [ativa, setAtiva]             = useState(null)
+  const [mensagens, setMensagens]     = useState([])
+  const [input, setInput]             = useState('')
+  const [search, setSearch]           = useState('')
+  const [loadingConv, setLoadingConv] = useState(false)
+  const [loadingMsgs, setLoadingMsgs] = useState(false)
+  const [sending, setSending]         = useState(false)
 
-  // Modal state
-  const [modal, setModal] = useState(null) // { type: 'single'|'all', jid?, nome? }
+  // Modal + Toast
+  const [modal, setModal]             = useState(null)
   const [modalLoading, setModalLoading] = useState(false)
+  const [toast, setToast]             = useState(null)
 
-  // Toast state
-  const [toast, setToast] = useState(null) // { msg, type }
-
-  function showToast(msg, type = 'success') {
-    setToast({ msg, type })
-  }
+  function showToast(msg, type = 'success') { setToast({ msg, type }) }
 
   // ── WA status polling ────────────────────────────────────
   const checkWA = useCallback(async () => {
@@ -129,9 +109,9 @@ export default function Conversas() {
       const s = await waStatus()
       const connected = s.status === 'connected'
       setWaPhase(connected ? 'connected' : 'disconnected')
-      if (connected && chats.length === 0) loadChats()
+      if (connected && conversas.length === 0) loadConversas()
     } catch { setWaPhase('disconnected') }
-  }, [chats.length])
+  }, [conversas.length])
 
   useEffect(() => {
     checkWA()
@@ -139,98 +119,92 @@ export default function Conversas() {
     return () => clearInterval(pollRef.current)
   }, [])
 
-  // ── Load chats ───────────────────────────────────────────
-  async function loadChats() {
-    setLoadingChats(true)
+  // ── Carregar conversas do SQLite ─────────────────────────
+  async function loadConversas() {
+    setLoadingConv(true)
     try {
-      const res  = await fetch(`${API}/whatsapp/chats`)
+      const res  = await fetch(`${API}/api/conversas`)
       const data = await res.json()
-      setChats(data.chats || [])
+      setConversas(data.conversas || [])
     } catch (e) { console.error(e) }
-    finally { setLoadingChats(false) }
+    finally { setLoadingConv(false) }
   }
 
-  // ── Load messages ────────────────────────────────────────
-  async function loadMensagens(jid) {
+  // ── Carregar mensagens do SQLite ─────────────────────────
+  async function loadMensagens(numero) {
     setLoadingMsgs(true)
     setMensagens([])
     try {
-      const res  = await fetch(`${API}/whatsapp/messages/${encodeURIComponent(jid)}`)
+      const res  = await fetch(`${API}/api/conversas/${encodeURIComponent(numero)}/mensagens`)
       const data = await res.json()
-      const msgs = (data.messages || []).sort((a, b) => a.messageTimestamp - b.messageTimestamp)
-      setMensagens(msgs)
+      setMensagens(data.mensagens || [])
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
     } catch (e) { console.error(e) }
     finally { setLoadingMsgs(false) }
   }
 
-  function selectChat(chat) {
-    setAtiva(chat)
-    loadMensagens(chat.remoteJid)
+  function selectConv(conv) {
+    setAtiva(conv)
+    loadMensagens(conv.numero)
   }
 
-  // ── Enviar mensagem ──────────────────────────────────────
+  // ── Enviar mensagem (Evolution API) ──────────────────────
   async function enviar(e) {
     e.preventDefault()
     if (!input.trim() || !ativa || sending) return
     const texto = input.trim()
     setInput('')
     setSending(true)
-    const fake = {
-      key: { fromMe: true, id: 'local_' + Date.now() },
-      messageTimestamp: Date.now() / 1000,
-      _fake: true,
-      message: { conversation: texto },
-    }
+    const fake = { id: 'local_' + Date.now(), role: 'assistant', conteudo: texto, criado_em: new Date().toISOString(), _fake: true }
     setMensagens(prev => [...prev, fake])
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50)
     try {
-      await waSend(formatJid(ativa.remoteJid).replace(/\D/g, ''), texto)
-      await loadMensagens(ativa.remoteJid)
-    } catch (e) {
+      await waSend(ativa.numero.replace(/\D/g, ''), texto)
+      await loadMensagens(ativa.numero)
+    } catch {
       setMensagens(prev => prev.filter(m => !m._fake))
+      showToast('Erro ao enviar mensagem', 'error')
     }
     setSending(false)
   }
 
-  // ── Delete individual ────────────────────────────────────
-  async function confirmarDeleteUm() {
+  // ── Limpar histórico de uma conversa ─────────────────────
+  async function confirmarLimpar() {
     setModalLoading(true)
     try {
-      const jid = modal.jid
-      await fetch(`${API}/whatsapp/chats/${encodeURIComponent(jid)}`, { method: 'DELETE' })
-      setChats(prev => prev.filter(c => c.remoteJid !== jid))
-      if (ativa?.remoteJid === jid) { setAtiva(null); setMensagens([]) }
-      showToast(`Conversa com ${modal.nome} excluída`)
-    } catch (e) {
-      showToast('Erro ao excluir conversa', 'error')
+      await fetch(`${API}/api/conversas/${encodeURIComponent(modal.numero)}`, { method: 'DELETE' })
+      setConversas(prev => prev.filter(c => c.numero !== modal.numero))
+      if (ativa?.numero === modal.numero) { setAtiva(null); setMensagens([]) }
+      showToast(`Histórico de ${modal.nome} limpo`)
+    } catch {
+      showToast('Erro ao limpar histórico', 'error')
     }
     setModalLoading(false)
     setModal(null)
   }
 
-  // ── Delete all ───────────────────────────────────────────
-  async function confirmarDeleteTodas() {
+  // ── Limpar todos ─────────────────────────────────────────
+  async function confirmarLimparTodos() {
     setModalLoading(true)
     try {
-      const res  = await fetch(`${API}/whatsapp/chats`, { method: 'DELETE' })
+      const res  = await fetch(`${API}/api/conversas`, { method: 'DELETE' })
       const data = await res.json()
-      setChats([])
+      setConversas([])
       setAtiva(null)
       setMensagens([])
-      showToast(`${data.deletadas} conversas excluídas${data.erros > 0 ? ` (${data.erros} erros)` : ''}`)
-    } catch (e) {
-      showToast('Erro ao excluir conversas', 'error')
+      showToast(`${data.deletadas} conversas limpas`)
+    } catch {
+      showToast('Erro ao limpar conversas', 'error')
     }
     setModalLoading(false)
     setModal(null)
   }
 
-  const filtrados = chats.filter(c => {
+  const filtradas = conversas.filter(c => {
     const q = search.toLowerCase()
     return !q ||
-      (c.pushName || '').toLowerCase().includes(q) ||
-      formatJid(c.remoteJid).includes(q)
+      (c.lead_nome || '').toLowerCase().includes(q) ||
+      formatNumero(c.numero).includes(q)
   })
 
   // ── Estados ──────────────────────────────────────────────
@@ -249,7 +223,7 @@ export default function Conversas() {
         <div>
           <p className="text-white text-lg font-bold mb-2">WhatsApp não conectado</p>
           <p className="text-[#555] text-sm leading-relaxed">
-            Conecte seu WhatsApp para visualizar e gerenciar suas conversas com leads.
+            Conecte seu WhatsApp para visualizar e enviar mensagens para seus leads.
           </p>
         </div>
         <button
@@ -269,30 +243,27 @@ export default function Conversas() {
       <div className="flex h-screen overflow-hidden">
         {/* ── Coluna esquerda ── */}
         <div className="w-[350px] flex-shrink-0 border-r border-[#1f1f1f] flex flex-col bg-[#0D0D0D]">
-          {/* Header da lista */}
           <div className="px-4 py-4 border-b border-[#1f1f1f]">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-white font-bold text-base">Conversas</h1>
               <div className="flex items-center gap-2">
-                {/* Excluir todas */}
-                {chats.length > 0 && (
+                {conversas.length > 0 && (
                   <button
                     onClick={() => setModal({ type: 'all' })}
                     className="flex items-center gap-1.5 text-[10px] font-semibold text-red-400/70 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-2.5 py-1.5 rounded-lg transition-colors"
-                    title="Excluir todas as conversas"
+                    title="Limpar todas as conversas"
                   >
                     <Trash2 size={11} />
-                    Excluir todas
+                    Limpar todas
                   </button>
                 )}
-                {/* Atualizar */}
                 <button
-                  onClick={loadChats}
-                  disabled={loadingChats}
+                  onClick={loadConversas}
+                  disabled={loadingConv}
                   className="text-[#444] hover:text-white transition-colors disabled:opacity-40 p-1"
                   title="Atualizar"
                 >
-                  <RefreshCw size={14} className={loadingChats ? 'animate-spin' : ''} />
+                  <RefreshCw size={14} className={loadingConv ? 'animate-spin' : ''} />
                 </button>
               </div>
             </div>
@@ -300,7 +271,7 @@ export default function Conversas() {
               <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#444]" />
               <input
                 type="text"
-                placeholder="Buscar conversa..."
+                placeholder="Buscar por nome ou número..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#333] text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
@@ -310,74 +281,62 @@ export default function Conversas() {
 
           {/* Lista */}
           <div className="flex-1 overflow-y-auto">
-            {loadingChats && (
+            {loadingConv && (
               <div className="flex items-center justify-center py-8">
                 <Loader2 size={20} className="animate-spin text-[#FF4D1C]" />
               </div>
             )}
-            {!loadingChats && filtrados.length === 0 && (
-              <div className="flex items-center justify-center py-12 px-4">
-                <p className="text-[#333] text-sm">Nenhuma conversa</p>
+            {!loadingConv && filtradas.length === 0 && (
+              <div className="flex flex-col items-center justify-center py-12 px-4 gap-2">
+                <MessageSquare size={24} className="text-[#222]" />
+                <p className="text-[#333] text-sm">Nenhuma conversa ainda</p>
+                <p className="text-[#222] text-xs text-center">As conversas do Thomas aparecem aqui quando leads respondem</p>
               </div>
             )}
-            {filtrados.map(chat => {
-              const nome    = chat.pushName || formatJid(chat.remoteJid)
-              const ultima  = extractText(chat.lastMessage)
-              const hora    = timeLabel(chat.lastMessage?.messageTimestamp || chat.updatedAt)
-              const isAtiva = ativa?.remoteJid === chat.remoteJid
-              const hovered = hoveredJid === chat.remoteJid
-
+            {filtradas.map(conv => {
+              const nome    = conv.lead_nome || conv.contato_nome || formatNumero(conv.numero)
+              const isAtiva = ativa?.numero === conv.numero
               return (
                 <div
-                  key={chat.remoteJid}
-                  className={`relative border-b border-[#111111] transition-colors ${
+                  key={conv.numero}
+                  className={`group relative border-b border-[#111111] transition-colors ${
                     isAtiva ? 'bg-[#FF4D1C]/8 border-l-2 border-l-[#FF4D1C]' : 'hover:bg-[#111111]'
                   }`}
-                  onMouseEnter={() => setHoveredJid(chat.remoteJid)}
-                  onMouseLeave={() => setHoveredJid(null)}
                 >
                   <button
-                    onClick={() => selectChat(chat)}
+                    onClick={() => selectConv(conv)}
                     className="w-full text-left px-4 py-3.5 pr-10"
                   >
                     <div className="flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-full flex-shrink-0 overflow-hidden bg-[#1f1f1f] flex items-center justify-center text-white text-xs font-bold">
-                        {chat.profilePicUrl
-                          ? <img src={chat.profilePicUrl} alt="" className="w-full h-full object-cover" onError={e => { e.target.style.display='none' }} />
-                          : nome.slice(0, 2).toUpperCase()
-                        }
+                      <div className="w-10 h-10 rounded-full flex-shrink-0 bg-[#1f1f1f] flex items-center justify-center text-white text-xs font-bold border border-[#2a2a2a]">
+                        {nome.slice(0, 2).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
                           <span className="text-white text-xs font-semibold truncate pr-2">{nome}</span>
-                          <span className="text-[#444] text-[10px] flex-shrink-0">{hora}</span>
+                          <span className="text-[#444] text-[10px] flex-shrink-0">{timeLabel(conv.ultima_hora)}</span>
                         </div>
-                        <p className="text-[#555] text-[11px] truncate mb-1">{ultima || '...'}</p>
+                        <p className="text-[#555] text-[11px] truncate mb-1">
+                          {conv.ultima_role === 'assistant' ? '🤖 ' : ''}{conv.ultima_msg || '...'}
+                        </p>
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] text-[#333] font-mono">{formatJid(chat.remoteJid)}</span>
-                          {chat.unreadCount > 0 && (
-                            <span className="w-4 h-4 rounded-full bg-[#FF4D1C] text-white text-[9px] font-bold flex items-center justify-center">
-                              {chat.unreadCount}
-                            </span>
-                          )}
+                          <span className="text-[9px] text-[#333] font-mono">{formatNumero(conv.numero)}</span>
+                          <span className="text-[9px] text-[#222]">· {conv.total_msgs} msgs</span>
                         </div>
                       </div>
                     </div>
                   </button>
 
-                  {/* Botão lixeira individual — aparece no hover */}
-                  {hovered && (
-                    <button
-                      onClick={e => {
-                        e.stopPropagation()
-                        setModal({ type: 'single', jid: chat.remoteJid, nome })
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-lg bg-red-400/10 hover:bg-red-400/20 text-red-400 transition-colors"
-                      title={`Excluir conversa com ${nome}`}
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  )}
+                  <button
+                    onClick={e => {
+                      e.stopPropagation()
+                      setModal({ type: 'single', numero: conv.numero, nome })
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 flex items-center justify-center rounded-lg bg-red-400/10 hover:bg-red-400/20 text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    title={`Limpar histórico de ${nome}`}
+                  >
+                    <Trash2 size={13} />
+                  </button>
                 </div>
               )
             })}
@@ -387,31 +346,30 @@ export default function Conversas() {
         {/* ── Coluna direita ── */}
         {ativa ? (
           <div className="flex-1 flex flex-col overflow-hidden">
-            {/* Header do chat */}
+            {/* Header */}
             <div className="px-6 py-4 border-b border-[#1f1f1f] flex items-center justify-between flex-shrink-0 bg-[#111111]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#1f1f1f] flex items-center justify-center text-white text-xs font-bold border border-[#2a2a2a] overflow-hidden">
-                  {ativa.profilePicUrl
-                    ? <img src={ativa.profilePicUrl} alt="" className="w-full h-full object-cover" />
-                    : (ativa.pushName || formatJid(ativa.remoteJid)).slice(0, 2).toUpperCase()
-                  }
+                <div className="w-10 h-10 rounded-full bg-[#1f1f1f] flex items-center justify-center text-white text-xs font-bold border border-[#2a2a2a]">
+                  {(ativa.lead_nome || ativa.contato_nome || formatNumero(ativa.numero)).slice(0, 2).toUpperCase()}
                 </div>
                 <div>
-                  <p className="text-white text-sm font-bold">{ativa.pushName || formatJid(ativa.remoteJid)}</p>
+                  <p className="text-white text-sm font-bold">
+                    {ativa.lead_nome || ativa.contato_nome || formatNumero(ativa.numero)}
+                  </p>
                   <span className="text-[#555] text-xs flex items-center gap-1">
-                    <Phone size={10} /> {formatJid(ativa.remoteJid)}
+                    <Phone size={10} /> {formatNumero(ativa.numero)}
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setModal({ type: 'single', jid: ativa.remoteJid, nome: ativa.pushName || formatJid(ativa.remoteJid) })}
+                  onClick={() => setModal({ type: 'single', numero: ativa.numero, nome: ativa.lead_nome || formatNumero(ativa.numero) })}
                   className="flex items-center gap-1.5 text-xs text-red-400/70 hover:text-red-400 border border-red-400/20 hover:border-red-400/40 px-3 py-1.5 rounded-lg transition-colors"
                 >
-                  <Trash2 size={12} /> Excluir
+                  <Trash2 size={12} /> Limpar
                 </button>
                 <button
-                  onClick={() => loadMensagens(ativa.remoteJid)}
+                  onClick={() => loadMensagens(ativa.numero)}
                   className="text-[#444] hover:text-white transition-colors p-1"
                   title="Atualizar mensagens"
                 >
@@ -428,21 +386,19 @@ export default function Conversas() {
                 </div>
               )}
               {!loadingMsgs && mensagens.map((msg, i) => {
-                const fromMe = msg.key?.fromMe
-                const texto  = extractText(msg)
-                const hora   = msg.messageTimestamp
-                  ? new Date(msg.messageTimestamp * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                const fromMe = msg.role === 'assistant'
+                const hora   = msg.criado_em
+                  ? new Date(msg.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                   : ''
-                if (!texto) return null
                 return (
                   <div key={msg.id || i} className={`flex ${fromMe ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[68%] flex flex-col gap-0.5 ${fromMe ? 'items-end' : 'items-start'}`}>
-                      <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                      <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         fromMe
                           ? 'bg-[#FF4D1C]/90 text-white rounded-tr-sm'
                           : 'bg-[#1a1a1a] border border-[#2a2a2a] text-[#ccc] rounded-tl-sm'
                       }`}>
-                        {texto}
+                        {msg.conteudo}
                       </div>
                       <span className="text-[#333] text-[10px] px-1">{hora}</span>
                     </div>
@@ -475,31 +431,31 @@ export default function Conversas() {
         ) : (
           <div className="flex-1 flex flex-col items-center justify-center bg-[#0D0D0D] gap-3">
             <div className="w-16 h-16 rounded-2xl bg-[#111111] border border-[#1f1f1f] flex items-center justify-center">
-              <Search size={24} className="text-[#333]" />
+              <MessageSquare size={24} className="text-[#333]" />
             </div>
-            <p className="text-[#333] text-sm">Selecione uma conversa para abrir o chat</p>
+            <p className="text-[#333] text-sm">Selecione uma conversa para ver o histórico</p>
           </div>
         )}
       </div>
 
-      {/* ── Modal de confirmação ── */}
+      {/* ── Modais ── */}
       {modal?.type === 'single' && (
         <ConfirmModal
-          title="Excluir conversa"
-          body={`Tem certeza que deseja excluir a conversa com "${modal.nome}"? Esta ação não pode ser desfeita.`}
-          confirmLabel="Excluir"
+          title="Limpar histórico"
+          body={`Apagar todo o histórico da conversa com "${modal.nome}" do banco de dados? O Thomas vai começar do zero com esse lead.`}
+          confirmLabel="Limpar histórico"
           loading={modalLoading}
-          onConfirm={confirmarDeleteUm}
+          onConfirm={confirmarLimpar}
           onCancel={() => setModal(null)}
         />
       )}
       {modal?.type === 'all' && (
         <ConfirmModal
-          title="Excluir todas as conversas"
-          body={`Tem certeza? Isso vai excluir TODAS as ${chats.length} conversas do WhatsApp permanentemente. Esta ação não pode ser desfeita.`}
-          confirmLabel={`Excluir todas (${chats.length})`}
+          title="Limpar todas as conversas"
+          body={`Apagar o histórico de TODAS as ${conversas.length} conversas do banco? Esta ação não pode ser desfeita.`}
+          confirmLabel={`Limpar todas (${conversas.length})`}
           loading={modalLoading}
-          onConfirm={confirmarDeleteTodas}
+          onConfirm={confirmarLimparTodos}
           onCancel={() => setModal(null)}
         />
       )}
