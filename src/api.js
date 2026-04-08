@@ -1,4 +1,4 @@
-export const API = 'https://salad-dispatched-dry-gets.trycloudflare.com'
+export const API = 'https://man-mills-musician-subscriptions.trycloudflare.com'
 
 export async function fetchLeads() {
   const res = await fetch(`${API}/leads`)
