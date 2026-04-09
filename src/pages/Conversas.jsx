@@ -4,7 +4,7 @@ import {
   Trash2, AlertTriangle, X, CheckCircle2, MessageSquare,
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
-import { API, waStatus, waSend } from '../api'
+import { API, authFetch, waStatus, waSend } from '../api'
 
 // ── Helpers ───────────────────────────────────────────────
 function formatNumero(numero = '') {
@@ -123,7 +123,7 @@ export default function Conversas() {
   async function loadConversas() {
     setLoadingConv(true)
     try {
-      const res  = await fetch(`${API}/api/conversas`)
+      const res  = await authFetch(`${API}/api/conversas`)
       const data = await res.json()
       setConversas(data.conversas || [])
     } catch (e) { console.error(e) }
@@ -135,7 +135,7 @@ export default function Conversas() {
     setLoadingMsgs(true)
     setMensagens([])
     try {
-      const res  = await fetch(`${API}/api/conversas/${encodeURIComponent(numero)}/mensagens`)
+      const res  = await authFetch(`${API}/api/conversas/${encodeURIComponent(numero)}/mensagens`)
       const data = await res.json()
       setMensagens(data.mensagens || [])
       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
@@ -172,7 +172,7 @@ export default function Conversas() {
   async function confirmarLimpar() {
     setModalLoading(true)
     try {
-      await fetch(`${API}/api/conversas/${encodeURIComponent(modal.numero)}`, { method: 'DELETE' })
+      await authFetch(`${API}/api/conversas/${encodeURIComponent(modal.numero)}`, { method: 'DELETE' })
       setConversas(prev => prev.filter(c => c.numero !== modal.numero))
       if (ativa?.numero === modal.numero) { setAtiva(null); setMensagens([]) }
       showToast(`Histórico de ${modal.nome} limpo`)
@@ -187,7 +187,7 @@ export default function Conversas() {
   async function confirmarLimparTodos() {
     setModalLoading(true)
     try {
-      const res  = await fetch(`${API}/api/conversas`, { method: 'DELETE' })
+      const res  = await authFetch(`${API}/api/conversas`, { method: 'DELETE' })
       const data = await res.json()
       setConversas([])
       setAtiva(null)

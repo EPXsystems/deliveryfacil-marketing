@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
   KanbanSquare,
@@ -9,6 +9,7 @@ import {
   MessageCircle,
   Settings,
   Workflow,
+  LogOut,
 } from 'lucide-react'
 
 const navItems = [
@@ -23,6 +24,13 @@ const navItems = [
 ]
 
 export default function Sidebar() {
+  const navigate = useNavigate()
+
+  function logout() {
+    localStorage.removeItem('token')
+    navigate('/login', { replace: true })
+  }
+
   return (
     <aside className="w-64 flex-shrink-0 bg-[#111111] border-r border-[#1f1f1f] flex flex-col">
       {/* Logo */}
@@ -62,10 +70,17 @@ export default function Sidebar() {
           <div className="w-8 h-8 rounded-full bg-[#FF4D1C]/20 flex items-center justify-center text-[#FF4D1C] text-xs font-bold">
             TM
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-white text-xs font-medium">Thomas</p>
             <p className="text-[#555] text-xs">Admin</p>
           </div>
+          <button
+            onClick={logout}
+            title="Sair"
+            className="text-[#444] hover:text-red-400 transition-colors p-1"
+          >
+            <LogOut size={15} />
+          </button>
         </div>
       </div>
     </aside>

@@ -5,7 +5,7 @@ import {
   ArrowRight, TrendingUp, Calendar, RotateCcw,
   AlertCircle, Zap,
 } from 'lucide-react'
-import { API } from '../api'
+import { API, authFetch } from '../api'
 import TesteBanner from '../components/TesteBanner'
 
 // ── Toggle ────────────────────────────────────────────────
@@ -81,7 +81,7 @@ export default function Automacao() {
   const scrollRef = useRef(null)
 
   useEffect(() => {
-    fetch(`${API}/teste/status`)
+    authFetch(`${API}/teste/status`)
       .then(r => r.json())
       .then(d => { if (d.success) { setModoTeste(d.modo_teste); setTestNumber(d.test_number || '5551981538335') } })
       .catch(() => {})
@@ -96,9 +96,9 @@ export default function Automacao() {
     setLoading(true)
     try {
       const [sRes, cRes, rRes] = await Promise.all([
-        fetch(`${API}/automacao/status`).then(r => r.json()),
-        fetch(`${API}/automacao/ciclos`).then(r => r.json()),
-        fetch(`${API}/automacao/remarketing`).then(r => r.json()),
+        authFetch(`${API}/automacao/status`).then(r => r.json()),
+        authFetch(`${API}/automacao/ciclos`).then(r => r.json()),
+        authFetch(`${API}/automacao/remarketing`).then(r => r.json()),
       ])
       if (sRes.success) {
         setStatus(sRes)
@@ -118,7 +118,7 @@ export default function Automacao() {
     const novoAtivo = !ativo
     setAtivo(novoAtivo)
     try {
-      await fetch(`${API}/automacao/toggle`, { method: 'POST' })
+      await authFetch(`${API}/automacao/toggle`, { method: 'POST' })
       fetchAll()
     } catch { setAtivo(!novoAtivo) }
   }
@@ -126,9 +126,8 @@ export default function Automacao() {
   async function salvarConfig() {
     setSalvando(true)
     try {
-      await fetch(`${API}/automacao/config`, {
+      await authFetch(`${API}/automacao/config`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(cfg),
       })
       fetchAll()
@@ -145,7 +144,7 @@ export default function Automacao() {
     setResumo(null)
 
     try {
-      const res = await fetch(`${API}/automacao/executar-agora`, { method: 'POST' })
+      const res = await authFetch(`${API}/automacao/executar-agora`, { method: 'POST' })
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''

@@ -5,7 +5,7 @@ import {
   ChevronDown, ChevronUp, TrendingUp, Loader2, XCircle, Play,
   Clock, Target, Pause, Eye, EyeOff,
 } from 'lucide-react'
-import { API } from '../api'
+import { API, authFetch, getToken } from '../api'
 import TesteBanner from '../components/TesteBanner'
 
 // ── Toggle ────────────────────────────────────────────────
@@ -129,13 +129,13 @@ export default function Agente() {
 
   // Carrega config, meta e logs ao montar
   useEffect(() => {
-    fetch(`${API}/teste/status`)
+    authFetch(`${API}/teste/status`)
       .then(r => r.json())
       .then(d => { if (d.success) { setModoTeste(d.modo_teste); setTestNumber(d.test_number || '5551981538335') } })
       .catch(() => {})
     fetchMeta()
     fetchLogs()
-    fetch(`${API}/agente/config`)
+    authFetch(`${API}/agente/config`)
       .then(r => r.json())
       .then(d => {
         if (d.config) {
@@ -159,14 +159,14 @@ export default function Agente() {
   }, [])
 
   function fetchMeta() {
-    fetch(`${API}/agente/meta-dia`)
+    authFetch(`${API}/agente/meta-dia`)
       .then(r => r.json())
       .then(d => { if (d.success) setMetaDia(d) })
       .catch(() => {})
   }
 
   function fetchLogs() {
-    fetch(`${API}/agente/sdr-logs`)
+    authFetch(`${API}/agente/sdr-logs`)
       .then(r => r.json())
       .then(d => { if (d.success) setLogs(d.logs || []) })
       .catch(() => {})
@@ -182,9 +182,8 @@ export default function Agente() {
   async function salvarConfig() {
     setSalvando(true)
     try {
-      await fetch(`${API}/agente/config`, {
+      await authFetch(`${API}/agente/config`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ativo: ativo ? 1 : 0,
           msg_d0: msgs.d0, msg_d1: msgs.d1, msg_d3: msgs.d3,
@@ -210,7 +209,7 @@ export default function Agente() {
     setResumo(null)
 
     try {
-      const res = await fetch(`${API}/agente/executar-sdr`, { method: 'POST' })
+      const res = await authFetch(`${API}/agente/executar-sdr`, { method: 'POST' })
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
