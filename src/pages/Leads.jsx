@@ -8,7 +8,7 @@ const STATUS_STYLE = {
   Captado:   'bg-blue-400/10 text-blue-400',
   Contatado: 'bg-yellow-400/10 text-yellow-400',
   Respondeu: 'bg-purple-400/10 text-purple-400',
-  Trial:     'bg-[#FF4D1C]/10 text-[#FF4D1C]',
+  Trial:     'bg-[#FF6000]/10 text-[#FF6000]',
   Cliente:   'bg-emerald-400/10 text-emerald-400',
   Perdido:   'bg-[#1f1f1f] text-[#555]',
 }
@@ -82,7 +82,7 @@ export default function Leads() {
             placeholder="Buscar por nome, telefone ou cidade..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#444] text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+            className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#444] text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
           />
         </div>
 
@@ -90,7 +90,7 @@ export default function Leads() {
           <select
             value={filterStatus}
             onChange={e => setFilterStatus(e.target.value)}
-            className="appearance-none bg-[#111111] border border-[#1f1f1f] text-[#888] text-xs rounded-lg px-3 py-2 pr-7 focus:outline-none focus:border-[#FF4D1C]/50 cursor-pointer"
+            className="appearance-none bg-[#111111] border border-[#1f1f1f] text-[#888] text-xs rounded-lg px-3 py-2 pr-7 focus:outline-none focus:border-[#FF6000]/50 cursor-pointer"
           >
             {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
@@ -102,7 +102,7 @@ export default function Leads() {
       <div className="flex-1 overflow-auto px-6 py-4">
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+            <Loader2 size={28} className="animate-spin text-[#FF6000]" />
           </div>
         ) : (
           <table className="w-full border-collapse">

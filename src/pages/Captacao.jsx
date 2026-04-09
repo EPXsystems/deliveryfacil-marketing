@@ -96,7 +96,7 @@ export default function Captacao() {
                 onChange={e => setCategoria(e.target.value)}
                 disabled={loading}
                 required
-                className="appearance-none w-full bg-[#111111] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF4D1C]/50 disabled:opacity-50 cursor-pointer"
+                className="appearance-none w-full bg-[#111111] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF6000]/50 disabled:opacity-50 cursor-pointer"
               >
                 <option value="">Selecionar...</option>
                 {CATEGORIAS.map(c => <option key={c} value={c}>{c}</option>)}
@@ -114,7 +114,7 @@ export default function Captacao() {
                 onChange={e => setCidade(e.target.value)}
                 disabled={loading}
                 required
-                className="appearance-none w-full bg-[#111111] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF4D1C]/50 disabled:opacity-50 cursor-pointer"
+                className="appearance-none w-full bg-[#111111] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF6000]/50 disabled:opacity-50 cursor-pointer"
               >
                 <option value="">Selecionar...</option>
                 {CIDADES.map(c => <option key={c} value={c}>{c}</option>)}
@@ -132,7 +132,7 @@ export default function Captacao() {
               value={bairro}
               onChange={e => setBairro(e.target.value)}
               disabled={loading}
-              className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#333] text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#FF4D1C]/50 disabled:opacity-50"
+              className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#333] text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#FF6000]/50 disabled:opacity-50"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function Captacao() {
               onClick={() => setDelivery(d => !d)}
               className={`flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium border transition-colors disabled:opacity-50 ${
                 delivery
-                  ? 'bg-[#FF4D1C]/15 border-[#FF4D1C]/40 text-[#FF4D1C]'
+                  ? 'bg-[#FF6000]/15 border-[#FF6000]/40 text-[#FF6000]'
                   : 'bg-[#111111] border-[#1f1f1f] text-[#666] hover:text-white'
               }`}
             >
@@ -166,7 +166,7 @@ export default function Captacao() {
                   onClick={() => setQuantidade(q)}
                   className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 ${
                     quantidade === q
-                      ? 'bg-[#FF4D1C] text-white'
+                      ? 'bg-[#FF6000] text-white'
                       : 'bg-[#111111] border border-[#1f1f1f] text-[#666] hover:text-white'
                   }`}
                 >
@@ -180,7 +180,7 @@ export default function Captacao() {
           <button
             type="submit"
             disabled={loading || !categoria || !cidade}
-            className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
+            className="flex items-center gap-2 bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold px-5 py-2.5 rounded-lg transition-colors"
           >
             {loading ? (
               <><Loader2 size={15} className="animate-spin" />Buscando...</>
@@ -195,7 +195,7 @@ export default function Captacao() {
       <div className="flex-1 overflow-auto px-6 py-4">
         {loading && (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
-            <Loader2 size={36} className="animate-spin text-[#FF4D1C]" />
+            <Loader2 size={36} className="animate-spin text-[#FF6000]" />
             <div className="text-center">
               <p className="text-white text-sm font-medium">Buscando no Google Maps...</p>
               <p className="text-[#444] text-xs mt-1">Isso pode levar até 2 minutos dependendo da quantidade</p>
@@ -212,8 +212,8 @@ export default function Captacao() {
 
         {!loading && !error && leads.length === 0 && (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-[#FF4D1C]/10 flex items-center justify-center">
-              <MapPin size={26} className="text-[#FF4D1C]" />
+            <div className="w-14 h-14 rounded-2xl bg-[#FF6000]/10 flex items-center justify-center">
+              <MapPin size={26} className="text-[#FF6000]" />
             </div>
             <div className="text-center">
               <p className="text-white text-sm font-medium">Nenhum lead ainda</p>
@@ -227,7 +227,7 @@ export default function Captacao() {
             <div className="flex items-center gap-3 mb-4">
               <p className="text-[#666] text-sm">
                 <span className="text-white font-semibold">{leads.length}</span> novos leads
-                {' '}— <span className="text-[#FF4D1C]">{categoria}{delivery ? ' delivery' : ''}</span> em <span className="text-[#FF4D1C]">{bairro ? `${bairro}, ` : ''}{cidade}</span>
+                {' '}— <span className="text-[#FF6000]">{categoria}{delivery ? ' delivery' : ''}</span> em <span className="text-[#FF6000]">{bairro ? `${bairro}, ` : ''}{cidade}</span>
               </p>
               {duplicatas > 0 && (
                 <span className="text-xs text-[#555] bg-[#1a1a1a] border border-[#2a2a2a] px-2 py-1 rounded-lg">
@@ -291,7 +291,7 @@ export default function Captacao() {
                       <td className="px-4 py-3">
                         {lead.mapsLink ? (
                           <a href={lead.mapsLink} target="_blank" rel="noopener noreferrer"
-                            className="flex items-center gap-1 text-[#FF4D1C] hover:text-[#ff6a42] text-xs transition-colors">
+                            className="flex items-center gap-1 text-[#FF6000] hover:text-[#ff6a42] text-xs transition-colors">
                             <ExternalLink size={11} />Ver
                           </a>
                         ) : <span className="text-[#333] text-xs">—</span>}
@@ -304,7 +304,7 @@ export default function Captacao() {
                         ) : (
                           <button
                             onClick={() => handleAddToPipeline(lead)}
-                            className="flex items-center gap-1.5 bg-[#FF4D1C]/10 hover:bg-[#FF4D1C]/20 border border-[#FF4D1C]/20 text-[#FF4D1C] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                            className="flex items-center gap-1.5 bg-[#FF6000]/10 hover:bg-[#FF6000]/20 border border-[#FF6000]/20 text-[#FF6000] text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors whitespace-nowrap"
                           >
                             <Plus size={12} />Pipeline
                           </button>

@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Zap, Loader2, AlertCircle } from 'lucide-react'
+import { Loader2, AlertCircle } from 'lucide-react'
 import { login } from '../api'
 
 export default function Login() {
   const navigate = useNavigate()
-  const [email, setEmail]     = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError]     = useState('')
+  const [loading, setLoading]   = useState(false)
+  const [error, setError]       = useState('')
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -29,14 +29,8 @@ export default function Login() {
     <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-10 justify-center">
-          <div className="w-10 h-10 rounded-xl bg-[#FF4D1C] flex items-center justify-center">
-            <Zap size={22} className="text-white" fill="white" />
-          </div>
-          <div>
-            <p className="text-white font-bold text-base leading-tight">Delivery Fácil</p>
-            <p className="text-[#FF4D1C] text-xs font-medium">Marketing OS</p>
-          </div>
+        <div className="flex justify-center mb-10">
+          <img src="/v4.png" style={{ height: '60px' }} alt="Delivery Fácil" />
         </div>
 
         {/* Card */}
@@ -54,7 +48,7 @@ export default function Login() {
                 required
                 autoFocus
                 placeholder="seu@email.com"
-                className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF4D1C]/50 transition-colors"
+                className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF6000]/50 transition-colors"
               />
             </div>
 
@@ -66,7 +60,7 @@ export default function Login() {
                 onChange={e => setPassword(e.target.value)}
                 required
                 placeholder="••••••••"
-                className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF4D1C]/50 transition-colors"
+                className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF6000]/50 transition-colors"
               />
             </div>
 
@@ -80,7 +74,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
+              className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3 rounded-xl transition-colors flex items-center justify-center gap-2 mt-2"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : null}
               {loading ? 'Entrando...' : 'Entrar'}

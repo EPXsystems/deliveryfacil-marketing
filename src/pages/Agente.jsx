@@ -16,7 +16,7 @@ function Toggle({ active, onChange, size = 'md' }) {
   return (
     <button
       onClick={onChange}
-      className={`relative ${w} rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF4D1C]' : 'bg-[#2a2a2a]'}`}
+      className={`relative ${w} rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF6000]' : 'bg-[#2a2a2a]'}`}
     >
       <span className={`absolute ${b} bg-white rounded-full shadow transition-transform duration-200 ${active ? t : 'translate-x-0'}`} />
     </button>
@@ -30,9 +30,9 @@ function EditableMsg({ label, value, onChange, badge }) {
     <div className="bg-[#0D0D0D] border border-[#1f1f1f] rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <span className="text-[#FF4D1C] text-xs font-bold">{label}</span>
+          <span className="text-[#FF6000] text-xs font-bold">{label}</span>
           {badge && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF4D1C]/10 text-[#FF4D1C] border border-[#FF4D1C]/20">{badge}</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF6000]/10 text-[#FF6000] border border-[#FF6000]/20">{badge}</span>
           )}
         </div>
         <button onClick={() => setEditing(e => !e)} className="text-[#444] hover:text-white transition-colors">
@@ -46,7 +46,7 @@ function EditableMsg({ label, value, onChange, badge }) {
           onChange={e => onChange(e.target.value)}
           onBlur={() => setEditing(false)}
           autoFocus
-          className="w-full bg-[#111111] border border-[#FF4D1C]/30 text-white text-xs rounded-lg p-3 focus:outline-none resize-none leading-relaxed"
+          className="w-full bg-[#111111] border border-[#FF6000]/30 text-white text-xs rounded-lg p-3 focus:outline-none resize-none leading-relaxed"
         />
       ) : (
         <p className="text-[#888] text-xs leading-relaxed">{value}</p>
@@ -90,7 +90,7 @@ const BASE_INICIAL = {
 // ── Status icon do item de progresso ─────────────────────
 function ProgressIcon({ status }) {
   if (status === 'gerando')  return <Loader2 size={12} className="animate-spin text-yellow-400 flex-shrink-0" />
-  if (status === 'enviando') return <Loader2 size={12} className="animate-spin text-[#FF4D1C] flex-shrink-0" />
+  if (status === 'enviando') return <Loader2 size={12} className="animate-spin text-[#FF6000] flex-shrink-0" />
   if (status === 'ok')       return <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />
   if (status === 'erro')     return <XCircle size={12} className="text-red-400 flex-shrink-0" />
   return <div className="w-3 h-3 rounded-full bg-[#333] flex-shrink-0" />
@@ -286,7 +286,7 @@ export default function Agente() {
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Target size={15} className="text-[#FF4D1C]" />
+              <Target size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Meta do Dia</h2>
             </div>
             <div className="flex items-center gap-4">
@@ -299,7 +299,7 @@ export default function Agente() {
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
                     metaDia.restantes === 0
                       ? 'bg-emerald-400/10 text-emerald-400'
-                      : 'bg-[#FF4D1C]/10 text-[#FF4D1C]'
+                      : 'bg-[#FF6000]/10 text-[#FF6000]'
                   }`}>
                     {metaDia.restantes === 0 ? 'Meta atingida!' : `${metaDia.restantes} restantes`}
                   </span>
@@ -309,13 +309,13 @@ export default function Agente() {
           </div>
           <div className="w-full bg-[#1a1a1a] rounded-full h-2 overflow-hidden">
             <div
-              className="bg-gradient-to-r from-[#FF4D1C] to-[#ff7a52] h-2 rounded-full transition-all duration-700"
+              className="bg-gradient-to-r from-[#FF6000] to-[#ff7a52] h-2 rounded-full transition-all duration-700"
               style={{ width: `${metaPct}%` }}
             />
           </div>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[#444] text-[10px]">0</span>
-            <span className="text-[#FF4D1C] text-[10px] font-semibold">{metaPct}%</span>
+            <span className="text-[#FF6000] text-[10px] font-semibold">{metaPct}%</span>
             <span className="text-[#444] text-[10px]">{metaDia?.meta || 10}</span>
           </div>
         </div>
@@ -327,7 +327,7 @@ export default function Agente() {
               <h2 className="text-white text-sm font-semibold">Iniciar SDR Hoje</h2>
               <p className="text-[#444] text-xs mt-0.5">
                 Delay {cfg.delay_min_seg / 60}–{cfg.delay_max_seg / 60} min · Máx {cfg.meta_dia}/dia · {cfg.horario_inicio}–{cfg.horario_fim}
-                {cfg.usar_ia && <span className="text-[#FF4D1C] ml-1">· IA ativa</span>}
+                {cfg.usar_ia && <span className="text-[#FF6000] ml-1">· IA ativa</span>}
               </p>
             </div>
             <button
@@ -336,7 +336,7 @@ export default function Agente() {
               className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors ${
                 executando || !ativo
                   ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
-                  : 'bg-[#FF4D1C] hover:bg-[#e63d0e] text-white'
+                  : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
               }`}
             >
               {executando ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
@@ -357,9 +357,9 @@ export default function Agente() {
                 </div>
               )}
               {executando && !resumo && (
-                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF4D1C]/5">
-                  <Loader2 size={12} className="animate-spin text-[#FF4D1C]" />
-                  <span className="text-[#FF4D1C] text-xs font-semibold">SDR em execução...</span>
+                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF6000]/5">
+                  <Loader2 size={12} className="animate-spin text-[#FF6000]" />
+                  <span className="text-[#FF6000] text-xs font-semibold">SDR em execução...</span>
                 </div>
               )}
 
@@ -373,7 +373,7 @@ export default function Agente() {
                         <div className="flex items-center gap-2">
                           <span className="text-white text-xs font-medium truncate">{p.lead}</span>
                           {p.status === 'gerando'  && <span className="text-yellow-400 text-[10px]">gerando mensagem...</span>}
-                          {p.status === 'enviando' && <span className="text-[#FF4D1C] text-[10px]">enviando...</span>}
+                          {p.status === 'enviando' && <span className="text-[#FF6000] text-[10px]">enviando...</span>}
                           {p.status === 'ok'       && <span className="text-emerald-400 text-[10px]">enviado</span>}
                           {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[140px]">{p.erro}</span>}
                         </div>
@@ -388,9 +388,9 @@ export default function Agente() {
 
                 {/* Aguardando */}
                 {aguardando && (
-                  <div className="flex items-center gap-3 px-4 py-3 bg-[#FF4D1C]/3 border-t border-[#1f1f1f]">
-                    <Clock size={12} className="text-[#FF4D1C] flex-shrink-0 animate-pulse" />
-                    <span className="text-[#FF4D1C] text-xs">
+                  <div className="flex items-center gap-3 px-4 py-3 bg-[#FF6000]/3 border-t border-[#1f1f1f]">
+                    <Clock size={12} className="text-[#FF6000] flex-shrink-0 animate-pulse" />
+                    <span className="text-[#FF6000] text-xs">
                       Aguardando <strong>{aguardando.label}</strong> antes de contatar{aguardando.proximo ? ` "${aguardando.proximo}"` : ''}...
                     </span>
                   </div>
@@ -407,7 +407,7 @@ export default function Agente() {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#1a1a1a] transition-colors"
           >
             <div className="flex items-center gap-2">
-              <Settings2 size={15} className="text-[#FF4D1C]" />
+              <Settings2 size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Configuração do SDR</h2>
             </div>
             {cfgOpen ? <ChevronUp size={15} className="text-[#444]" /> : <ChevronDown size={15} className="text-[#444]" />}
@@ -424,7 +424,7 @@ export default function Agente() {
                       type="range" min={5} max={50} step={5}
                       value={cfg.meta_dia}
                       onChange={e => setCfg(c => ({ ...c, meta_dia: +e.target.value }))}
-                      className="flex-1 accent-[#FF4D1C]"
+                      className="flex-1 accent-[#FF6000]"
                     />
                     <span className="text-white text-sm font-bold w-8 text-right">{cfg.meta_dia}</span>
                   </div>
@@ -435,7 +435,7 @@ export default function Agente() {
                     type="number" min={1} max={60}
                     value={Math.round(cfg.delay_min_seg / 60)}
                     onChange={e => setCfg(c => ({ ...c, delay_min_seg: +e.target.value * 60 }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
                 <div>
@@ -444,7 +444,7 @@ export default function Agente() {
                     type="number" min={1} max={120}
                     value={Math.round(cfg.delay_max_seg / 60)}
                     onChange={e => setCfg(c => ({ ...c, delay_max_seg: +e.target.value * 60 }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
               </div>
@@ -457,7 +457,7 @@ export default function Agente() {
                     type="time"
                     value={cfg.horario_inicio}
                     onChange={e => setCfg(c => ({ ...c, horario_inicio: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
                 <div>
@@ -466,7 +466,7 @@ export default function Agente() {
                     type="time"
                     value={cfg.horario_fim}
                     onChange={e => setCfg(c => ({ ...c, horario_fim: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
               </div>
@@ -489,7 +489,7 @@ export default function Agente() {
                         onClick={() => setCfg(c => ({ ...c, tom: t }))}
                         className={`text-xs px-3 py-1.5 rounded-lg border transition-colors capitalize ${
                           cfg.tom === t
-                            ? 'bg-[#FF4D1C]/15 border-[#FF4D1C]/40 text-[#FF4D1C]'
+                            ? 'bg-[#FF6000]/15 border-[#FF6000]/40 text-[#FF6000]'
                             : 'bg-[#0D0D0D] border-[#1f1f1f] text-[#555] hover:text-white'
                         }`}
                       >
@@ -510,7 +510,7 @@ export default function Agente() {
                       placeholder="sk-ant-..."
                       value={cfg.claude_api_key}
                       onChange={e => setCfg(c => ({ ...c, claude_api_key: e.target.value }))}
-                      className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 pr-10 focus:outline-none focus:border-[#FF4D1C]/50 font-mono"
+                      className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 pr-10 focus:outline-none focus:border-[#FF6000]/50 font-mono"
                     />
                     <button
                       type="button"
@@ -527,7 +527,7 @@ export default function Agente() {
               <button
                 onClick={salvarConfig}
                 disabled={salvando}
-                className="w-full bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
               >
                 {salvando ? 'Salvando...' : 'Salvar configurações'}
               </button>
@@ -538,13 +538,13 @@ export default function Agente() {
         {/* Fluxo de abordagem */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <Zap size={15} className="text-[#FF4D1C]" />
+            <Zap size={15} className="text-[#FF6000]" />
             <h2 className="text-white text-sm font-semibold">Fluxo de Abordagem</h2>
             <span className="text-[10px] text-[#555] ml-1">— clique no lápis para editar</span>
           </div>
 
           <div className="space-y-0">
-            <FluxoStep icon={MessageSquare} cor="bg-[#FF4D1C]" label="D+0 — Mensagem de abertura">
+            <FluxoStep icon={MessageSquare} cor="bg-[#FF6000]" label="D+0 — Mensagem de abertura">
               <EditableMsg label="Mensagem inicial" value={msgs.d0} onChange={v => setMsgs(m => ({ ...m, d0: v }))} badge="Enviada ao captar lead" />
             </FluxoStep>
 
@@ -564,10 +564,10 @@ export default function Agente() {
                 </div>
                 <p className="text-[#555] text-xs leading-relaxed">Thomas qualifica → envia link do trial → tenta fechar</p>
               </div>
-              <div className="bg-[#FF4D1C]/5 border border-[#FF4D1C]/20 rounded-xl p-3">
+              <div className="bg-[#FF6000]/5 border border-[#FF6000]/20 rounded-xl p-3">
                 <div className="flex items-center gap-2 mb-1.5">
-                  <PhoneCall size={13} className="text-[#FF4D1C]" />
-                  <span className="text-[#FF4D1C] text-xs font-semibold">Não fecha sozinho</span>
+                  <PhoneCall size={13} className="text-[#FF6000]" />
+                  <span className="text-[#FF6000] text-xs font-semibold">Não fecha sozinho</span>
                 </div>
                 <p className="text-[#555] text-xs leading-relaxed">Propõe ligação com consultor → notifica você</p>
               </div>
@@ -588,7 +588,7 @@ export default function Agente() {
             className="w-full flex items-center justify-between px-5 py-4 hover:bg-[#1a1a1a] transition-colors"
           >
             <div className="flex items-center gap-2">
-              <BookOpen size={15} className="text-[#FF4D1C]" />
+              <BookOpen size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Base de Conhecimento</h2>
               <span className="text-[10px] text-[#555]">— Thomas usa isso para responder dúvidas</span>
             </div>
@@ -609,7 +609,7 @@ export default function Agente() {
               <button
                 onClick={salvarConfig}
                 disabled={salvando}
-                className="w-full bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
               >
                 {salvando ? 'Salvando...' : 'Salvar base de conhecimento'}
               </button>
@@ -621,7 +621,7 @@ export default function Agente() {
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <Activity size={14} className="text-[#FF4D1C]" />
+              <Activity size={14} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Log de Disparos</h2>
             </div>
             <button onClick={fetchLogs} className="text-[#444] hover:text-white transition-colors text-xs">

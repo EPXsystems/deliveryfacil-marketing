@@ -210,7 +210,7 @@ export default function Conversas() {
   // ── Estados ──────────────────────────────────────────────
   if (waPhase === 'loading') return (
     <div className="flex items-center justify-center h-screen bg-[#0D0D0D]">
-      <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+      <Loader2 size={28} className="animate-spin text-[#FF6000]" />
     </div>
   )
 
@@ -228,7 +228,7 @@ export default function Conversas() {
         </div>
         <button
           onClick={() => navigate('/configuracoes')}
-          className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors"
+          className="flex items-center gap-2 bg-[#FF6000] hover:bg-[#E55500] text-white text-sm font-bold px-6 py-3 rounded-xl transition-colors"
         >
           Conectar WhatsApp
         </button>
@@ -274,7 +274,7 @@ export default function Conversas() {
                 placeholder="Buscar por nome ou número..."
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#333] text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                className="w-full bg-[#111111] border border-[#1f1f1f] text-white placeholder-[#333] text-xs rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
               />
             </div>
           </div>
@@ -283,7 +283,7 @@ export default function Conversas() {
           <div className="flex-1 overflow-y-auto">
             {loadingConv && (
               <div className="flex items-center justify-center py-8">
-                <Loader2 size={20} className="animate-spin text-[#FF4D1C]" />
+                <Loader2 size={20} className="animate-spin text-[#FF6000]" />
               </div>
             )}
             {!loadingConv && filtradas.length === 0 && (
@@ -300,7 +300,7 @@ export default function Conversas() {
                 <div
                   key={conv.numero}
                   className={`group relative border-b border-[#111111] transition-colors ${
-                    isAtiva ? 'bg-[#FF4D1C]/8 border-l-2 border-l-[#FF4D1C]' : 'hover:bg-[#111111]'
+                    isAtiva ? 'bg-[#FF6000]/8 border-l-2 border-l-[#FF6000]' : 'hover:bg-[#111111]'
                   }`}
                 >
                   <button
@@ -382,7 +382,7 @@ export default function Conversas() {
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-2 bg-[#0D0D0D]">
               {loadingMsgs && (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 size={22} className="animate-spin text-[#FF4D1C]" />
+                  <Loader2 size={22} className="animate-spin text-[#FF6000]" />
                 </div>
               )}
               {!loadingMsgs && mensagens.map((msg, i) => {
@@ -395,7 +395,7 @@ export default function Conversas() {
                     <div className={`max-w-[68%] flex flex-col gap-0.5 ${fromMe ? 'items-end' : 'items-start'}`}>
                       <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         fromMe
-                          ? 'bg-[#FF4D1C]/90 text-white rounded-tr-sm'
+                          ? 'bg-[#FF6000]/90 text-white rounded-tr-sm'
                           : 'bg-[#1a1a1a] border border-[#2a2a2a] text-[#ccc] rounded-tl-sm'
                       }`}>
                         {msg.conteudo}
@@ -416,12 +416,12 @@ export default function Conversas() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   placeholder="Digite sua mensagem..."
-                  className="flex-1 bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF4D1C]/50"
+                  className="flex-1 bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-xl px-4 py-3 focus:outline-none focus:border-[#FF6000]/50"
                 />
                 <button
                   type="submit"
                   disabled={!input.trim() || sending}
-                  className="bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-40 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-colors"
+                  className="bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-40 disabled:cursor-not-allowed text-white p-3 rounded-xl transition-colors"
                 >
                   {sending ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
                 </button>

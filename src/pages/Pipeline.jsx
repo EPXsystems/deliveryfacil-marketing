@@ -17,7 +17,7 @@ const COLUMN_STYLE = {
   Captado:   { dot: 'bg-blue-400',    border: 'border-blue-400/25',    badge: 'bg-blue-400/10 text-blue-400' },
   Contatado: { dot: 'bg-yellow-400',  border: 'border-yellow-400/25',  badge: 'bg-yellow-400/10 text-yellow-400' },
   Respondeu: { dot: 'bg-purple-400',  border: 'border-purple-400/25',  badge: 'bg-purple-400/10 text-purple-400' },
-  Trial:     { dot: 'bg-[#FF4D1C]',   border: 'border-[#FF4D1C]/25',   badge: 'bg-[#FF4D1C]/10 text-[#FF4D1C]' },
+  Trial:     { dot: 'bg-[#FF6000]',   border: 'border-[#FF6000]/25',   badge: 'bg-[#FF6000]/10 text-[#FF6000]' },
   Cliente:   { dot: 'bg-emerald-400', border: 'border-emerald-400/25', badge: 'bg-emerald-400/10 text-emerald-400' },
   Perdido:   { dot: 'bg-[#555]',      border: 'border-[#2a2a2a]',      badge: 'bg-[#1f1f1f] text-[#555]' },
 }
@@ -57,7 +57,7 @@ function LeadCard({ lead, onMove, onLose }) {
         <div className="flex flex-col gap-1">
           <button
             onClick={() => onMove(lead.id, next)}
-            className="w-full flex items-center justify-center gap-1 bg-[#FF4D1C]/10 hover:bg-[#FF4D1C]/20 text-[#FF4D1C] text-xs font-semibold py-2 rounded-lg transition-colors"
+            className="w-full flex items-center justify-center gap-1 bg-[#FF6000]/10 hover:bg-[#FF6000]/20 text-[#FF6000] text-xs font-semibold py-2 rounded-lg transition-colors"
           >
             <ChevronRight size={12} />
             Mover para {next}
@@ -130,7 +130,7 @@ export default function Pipeline() {
 
       {loading ? (
         <div className="flex items-center justify-center flex-1">
-          <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+          <Loader2 size={28} className="animate-spin text-[#FF6000]" />
         </div>
       ) : (
         <div className="flex-1 overflow-x-auto overflow-y-hidden p-6">

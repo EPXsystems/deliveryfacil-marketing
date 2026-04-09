@@ -4,7 +4,6 @@ import {
   KanbanSquare,
   Users,
   Bot,
-  Zap,
   Crosshair,
   MessageCircle,
   Settings,
@@ -34,14 +33,8 @@ export default function Sidebar() {
   return (
     <aside className="w-64 flex-shrink-0 bg-[#111111] border-r border-[#1f1f1f] flex flex-col">
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-5 border-b border-[#1f1f1f]">
-        <div className="w-8 h-8 rounded-lg bg-[#FF4D1C] flex items-center justify-center">
-          <Zap size={18} className="text-white" fill="white" />
-        </div>
-        <div>
-          <p className="text-white font-bold text-sm leading-tight">Delivery Fácil</p>
-          <p className="text-[#FF4D1C] text-xs font-medium">Marketing OS</p>
-        </div>
+      <div className="flex items-center px-5 py-4 border-b border-[#1f1f1f]">
+        <img src="/v4.png" style={{ height: '36px' }} alt="Delivery Fácil" />
       </div>
 
       {/* Nav */}
@@ -53,7 +46,7 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
                 isActive
-                  ? 'bg-[#FF4D1C]/15 text-[#FF4D1C] border border-[#FF4D1C]/20'
+                  ? 'bg-[#FF6000]/15 text-[#FF6000] border border-[#FF6000]/20'
                   : 'text-[#888] hover:text-white hover:bg-white/5'
               }`
             }
@@ -67,7 +60,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="px-4 py-4 border-t border-[#1f1f1f]">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-[#FF4D1C]/20 flex items-center justify-center text-[#FF4D1C] text-xs font-bold">
+          <div className="w-8 h-8 rounded-full bg-[#FF6000]/20 flex items-center justify-center text-[#FF6000] text-xs font-bold">
             TM
           </div>
           <div className="flex-1">
@@ -77,7 +70,7 @@ export default function Sidebar() {
           <button
             onClick={logout}
             title="Sair"
-            className="text-[#444] hover:text-red-400 transition-colors p-1"
+            className="text-[#444] hover:text-[#FF6000] transition-colors p-1"
           >
             <LogOut size={15} />
           </button>

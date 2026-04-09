@@ -16,7 +16,7 @@ function Toggle({ active, onChange, size = 'md' }) {
   return (
     <button
       onClick={onChange}
-      className={`relative ${w} rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF4D1C]' : 'bg-[#2a2a2a]'}`}
+      className={`relative ${w} rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF6000]' : 'bg-[#2a2a2a]'}`}
     >
       <span className={`absolute ${b} bg-white rounded-full shadow transition-transform duration-200 ${active ? t : 'translate-x-0'}`} />
     </button>
@@ -26,7 +26,7 @@ function Toggle({ active, onChange, size = 'md' }) {
 // ── Progress icon ─────────────────────────────────────────
 function ProgressIcon({ status }) {
   if (status === 'gerando')  return <Loader2 size={12} className="animate-spin text-yellow-400 flex-shrink-0" />
-  if (status === 'enviando') return <Loader2 size={12} className="animate-spin text-[#FF4D1C] flex-shrink-0" />
+  if (status === 'enviando') return <Loader2 size={12} className="animate-spin text-[#FF6000] flex-shrink-0" />
   if (status === 'ok')       return <CheckCircle2 size={12} className="text-emerald-400 flex-shrink-0" />
   if (status === 'erro')     return <XCircle size={12} className="text-red-400 flex-shrink-0" />
   return <div className="w-3 h-3 rounded-full bg-[#333] flex-shrink-0" />
@@ -200,7 +200,7 @@ export default function Automacao() {
   const total = (f.captados || 0) + (f.contatados || 0)
   const funilSteps = [
     { label: 'Captados',    value: f.captados    || 0, base: Math.max(1, f.captados || 1),   cor: 'text-white' },
-    { label: 'Contatados',  value: f.contatados  || 0, base: Math.max(1, f.captados || 1),    cor: 'text-[#FF4D1C]' },
+    { label: 'Contatados',  value: f.contatados  || 0, base: Math.max(1, f.captados || 1),    cor: 'text-[#FF6000]' },
     { label: 'Responderam', value: f.responderam || 0, base: Math.max(1, f.contatados || 1),  cor: 'text-yellow-400' },
     { label: 'Trial',       value: f.trial       || 0, base: Math.max(1, f.responderam || 1), cor: 'text-blue-400' },
     { label: 'Clientes',    value: f.clientes    || 0, base: Math.max(1, f.trial || 1),        cor: 'text-emerald-400' },
@@ -212,7 +212,7 @@ export default function Automacao() {
   if (loading) {
     return (
       <div className="flex flex-col h-screen overflow-hidden items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-[#FF4D1C]" />
+        <Loader2 size={32} className="animate-spin text-[#FF6000]" />
         <p className="text-[#555] text-sm">Carregando automação...</p>
       </div>
     )
@@ -258,10 +258,10 @@ export default function Automacao() {
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <Target size={15} className="text-[#FF4D1C]" />
+                <Target size={15} className="text-[#FF6000]" />
                 <h2 className="text-white text-sm font-semibold">Ciclo de Hoje</h2>
                 {status?.hoje?.cidade && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF4D1C]/10 text-[#FF4D1C] border border-[#FF4D1C]/20">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF6000]/10 text-[#FF6000] border border-[#FF6000]/20">
                     {status.hoje.categoria} · {status.hoje.cidade}
                   </span>
                 )}
@@ -271,13 +271,13 @@ export default function Automacao() {
               </p>
               <div className="w-full bg-[#1a1a1a] rounded-full h-2 overflow-hidden mb-1">
                 <div
-                  className="bg-gradient-to-r from-[#FF4D1C] to-[#ff7a52] h-2 rounded-full transition-all duration-700"
+                  className="bg-gradient-to-r from-[#FF6000] to-[#ff7a52] h-2 rounded-full transition-all duration-700"
                   style={{ width: `${hojeMetaPct}%` }}
                 />
               </div>
               <div className="flex justify-between mt-1">
                 <span className="text-[#444] text-[10px]">0</span>
-                <span className="text-[#FF4D1C] text-[10px] font-semibold">{hojeMetaPct}%</span>
+                <span className="text-[#FF6000] text-[10px] font-semibold">{hojeMetaPct}%</span>
                 <span className="text-[#444] text-[10px]">{cfg.meta_dia}</span>
               </div>
             </div>
@@ -288,7 +288,7 @@ export default function Automacao() {
               className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors flex-shrink-0 ${
                 executando
                   ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
-                  : 'bg-[#FF4D1C] hover:bg-[#e63d0e] text-white'
+                  : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
               }`}
             >
               {executando ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
@@ -308,9 +308,9 @@ export default function Automacao() {
                   }
                 </div>
               ) : fase ? (
-                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF4D1C]/5">
-                  <Loader2 size={12} className="animate-spin text-[#FF4D1C]" />
-                  <span className="text-[#FF4D1C] text-xs font-semibold">{fase}</span>
+                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF6000]/5">
+                  <Loader2 size={12} className="animate-spin text-[#FF6000]" />
+                  <span className="text-[#FF6000] text-xs font-semibold">{fase}</span>
                 </div>
               ) : null}
 
@@ -323,7 +323,7 @@ export default function Automacao() {
                       <div className="flex items-center gap-2">
                         <span className="text-white text-xs font-medium truncate">{p.lead}</span>
                         {p.status === 'gerando'  && <span className="text-yellow-400 text-[10px]">gerando...</span>}
-                        {p.status === 'enviando' && <span className="text-[#FF4D1C] text-[10px]">enviando...</span>}
+                        {p.status === 'enviando' && <span className="text-[#FF6000] text-[10px]">enviando...</span>}
                         {p.status === 'ok'       && <span className="text-emerald-400 text-[10px]">enviado</span>}
                         {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[160px]">{p.erro}</span>}
                       </div>
@@ -336,8 +336,8 @@ export default function Automacao() {
                 ))}
                 {aguardando && (
                   <div className="flex items-center gap-3 px-4 py-3 border-t border-[#1f1f1f]">
-                    <Clock size={12} className="text-[#FF4D1C] animate-pulse flex-shrink-0" />
-                    <span className="text-[#FF4D1C] text-xs">
+                    <Clock size={12} className="text-[#FF6000] animate-pulse flex-shrink-0" />
+                    <span className="text-[#FF6000] text-xs">
                       Aguardando <strong>{aguardando.label}</strong>{aguardando.proximo ? ` antes de "${aguardando.proximo}"` : ''}...
                     </span>
                   </div>
@@ -353,7 +353,7 @@ export default function Automacao() {
           {/* Card 2: Configurações */}
           <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <Workflow size={15} className="text-[#FF4D1C]" />
+              <Workflow size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Configurações</h2>
             </div>
             <div className="space-y-4">
@@ -366,7 +366,7 @@ export default function Automacao() {
                   type="range" min={10} max={50} step={5}
                   value={cfg.meta_dia}
                   onChange={e => setCfg(c => ({ ...c, meta_dia: +e.target.value }))}
-                  className="w-full accent-[#FF4D1C]"
+                  className="w-full accent-[#FF6000]"
                 />
                 <div className="flex justify-between text-[#444] text-[10px] mt-0.5">
                   <span>10</span><span>50</span>
@@ -381,7 +381,7 @@ export default function Automacao() {
                     type="number" min={3} max={30}
                     value={Math.round(cfg.delay_min_seg / 60)}
                     onChange={e => setCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
                 <div>
@@ -390,7 +390,7 @@ export default function Automacao() {
                     type="number" min={3} max={60}
                     value={Math.round(cfg.delay_max_seg / 60)}
                     onChange={e => setCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
               </div>
@@ -403,7 +403,7 @@ export default function Automacao() {
                     type="time"
                     value={cfg.horario_inicio}
                     onChange={e => setCfg(c => ({ ...c, horario_inicio: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
                 <div>
@@ -412,7 +412,7 @@ export default function Automacao() {
                     type="time"
                     value={cfg.horario_fim}
                     onChange={e => setCfg(c => ({ ...c, horario_fim: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF4D1C]/50"
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
                   />
                 </div>
               </div>
@@ -432,7 +432,7 @@ export default function Automacao() {
               <button
                 onClick={salvarConfig}
                 disabled={salvando}
-                className="w-full bg-[#FF4D1C] hover:bg-[#e63d0e] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+                className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
               >
                 {salvando ? 'Salvando...' : 'Salvar configurações'}
               </button>
@@ -442,7 +442,7 @@ export default function Automacao() {
           {/* Card 3: Fila de rotação */}
           <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
             <div className="flex items-center gap-2 mb-4">
-              <RotateCcw size={15} className="text-[#FF4D1C]" />
+              <RotateCcw size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Próximos Ciclos</h2>
               <span className="text-[#444] text-[10px]">rotação automática</span>
             </div>
@@ -455,12 +455,12 @@ export default function Automacao() {
                     key={i}
                     className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
                       i === 0
-                        ? 'bg-[#FF4D1C]/10 border-[#FF4D1C]/25'
+                        ? 'bg-[#FF6000]/10 border-[#FF6000]/25'
                         : 'bg-[#0D0D0D] border-[#1a1a1a]'
                     }`}
                   >
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                      i === 0 ? 'bg-[#FF4D1C] text-white' : 'bg-[#1f1f1f] text-[#444]'
+                      i === 0 ? 'bg-[#FF6000] text-white' : 'bg-[#1f1f1f] text-[#444]'
                     }`}>
                       {i + 1}
                     </div>
@@ -468,11 +468,11 @@ export default function Automacao() {
                       <p className={`text-xs font-semibold truncate ${i === 0 ? 'text-white' : 'text-[#666]'}`}>
                         {item.categoria} · {item.cidade}
                       </p>
-                      <p className={`text-[10px] ${i === 0 ? 'text-[#FF4D1C]' : 'text-[#444]'}`}>
+                      <p className={`text-[10px] ${i === 0 ? 'text-[#FF6000]' : 'text-[#444]'}`}>
                         {item.data_prevista}
                       </p>
                     </div>
-                    {i === 0 && <ChevronRight size={13} className="text-[#FF4D1C] flex-shrink-0" />}
+                    {i === 0 && <ChevronRight size={13} className="text-[#FF6000] flex-shrink-0" />}
                   </div>
                 ))
               )}
@@ -483,7 +483,7 @@ export default function Automacao() {
         {/* ── Card 4: Funil completo ───────────────────────── */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
-            <TrendingUp size={15} className="text-[#FF4D1C]" />
+            <TrendingUp size={15} className="text-[#FF6000]" />
             <h2 className="text-white text-sm font-semibold">Funil de Conversão</h2>
             <span className="text-[#444] text-[10px]">dados reais do banco</span>
           </div>
@@ -509,7 +509,7 @@ export default function Automacao() {
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
-              <RefreshCw size={15} className="text-[#FF4D1C]" />
+              <RefreshCw size={15} className="text-[#FF6000]" />
               <h2 className="text-white text-sm font-semibold">Remarketing</h2>
               <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
                 cfg.remarketing_ativo
@@ -571,7 +571,7 @@ export default function Automacao() {
         {/* ── Card 6: Histórico de ciclos ──────────────────── */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Calendar size={15} className="text-[#FF4D1C]" />
+            <Calendar size={15} className="text-[#FF6000]" />
             <h2 className="text-white text-sm font-semibold">Histórico de Ciclos</h2>
           </div>
           {ciclos.length === 0 ? (
@@ -598,7 +598,7 @@ export default function Automacao() {
                       <td className="px-4 py-2.5 text-white text-xs font-medium">{c.cidade}</td>
                       <td className="px-4 py-2.5 text-[#666] text-xs">{c.categoria}</td>
                       <td className="px-4 py-2.5 text-white text-xs font-bold">{c.captados}</td>
-                      <td className="px-4 py-2.5 text-[#FF4D1C] text-xs font-bold">{c.contatados}</td>
+                      <td className="px-4 py-2.5 text-[#FF6000] text-xs font-bold">{c.contatados}</td>
                       <td className="px-4 py-2.5 text-yellow-400 text-xs font-bold">{c.respostas}</td>
                       <td className="px-4 py-2.5 text-emerald-400 text-xs font-bold">{c.conversoes}</td>
                     </tr>

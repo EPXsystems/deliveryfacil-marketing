@@ -17,7 +17,7 @@ function Toggle({ active, onChange }) {
   return (
     <button
       onClick={onChange}
-      className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF4D1C]' : 'bg-[#2a2a2a]'}`}
+      className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${active ? 'bg-[#FF6000]' : 'bg-[#2a2a2a]'}`}
     >
       <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200 ${active ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
@@ -41,7 +41,7 @@ function Input({ value, onChange, placeholder, type = 'text' }) {
       value={value}
       onChange={e => onChange(e.target.value)}
       placeholder={placeholder}
-      className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#FF4D1C]/50"
+      className="w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white placeholder-[#333] text-sm rounded-lg px-3 py-2.5 focus:outline-none focus:border-[#FF6000]/50"
     />
   )
 }
@@ -52,7 +52,7 @@ function Select({ value, onChange, options }) {
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="appearance-none w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF4D1C]/50 cursor-pointer"
+        className="appearance-none w-full bg-[#0D0D0D] border border-[#2a2a2a] text-white text-sm rounded-lg px-3 py-2.5 pr-8 focus:outline-none focus:border-[#FF6000]/50 cursor-pointer"
       >
         {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
       </select>
@@ -65,7 +65,7 @@ function SaveButton({ onClick }) {
   return (
     <button
       onClick={onClick}
-      className="bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors"
+      className="bg-[#FF6000] hover:bg-[#E55500] text-white text-sm font-semibold px-6 py-2.5 rounded-lg transition-colors"
     >
       Salvar alterações
     </button>
@@ -172,7 +172,7 @@ function TabWhatsApp() {
 
   if (phase === 'loading') return (
     <div className="flex items-center justify-center py-16">
-      <Loader2 size={24} className="animate-spin text-[#FF4D1C]" />
+      <Loader2 size={24} className="animate-spin text-[#FF6000]" />
     </div>
   )
 
@@ -236,7 +236,7 @@ function TabWhatsApp() {
           </div>
         ) : (
           <div className="w-56 h-56 rounded-xl bg-[#0D0D0D] border border-[#2a2a2a] flex items-center justify-center">
-            <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+            <Loader2 size={28} className="animate-spin text-[#FF6000]" />
           </div>
         )}
 
@@ -244,7 +244,7 @@ function TabWhatsApp() {
           <p className="text-[#444] text-xs">QR Code atualiza automaticamente a cada 30s</p>
           <button
             onClick={handleRefreshQR}
-            className="flex items-center gap-1 text-[#FF4D1C] hover:text-[#ff6a42] text-xs transition-colors"
+            className="flex items-center gap-1 text-[#FF6000] hover:text-[#ff6a42] text-xs transition-colors"
           >
             <RefreshCw size={11} /> Atualizar
           </button>
@@ -260,7 +260,7 @@ function TabWhatsApp() {
 
   if (phase === 'connecting') return (
     <div className="flex flex-col items-center justify-center py-16 gap-4">
-      <Loader2 size={32} className="animate-spin text-[#FF4D1C]" />
+      <Loader2 size={32} className="animate-spin text-[#FF6000]" />
       <div className="text-center">
         <p className="text-white text-sm font-semibold">Gerando QR Code...</p>
         <p className="text-[#444] text-xs mt-1">Criando instância marketing-os na Evolution API</p>
@@ -283,7 +283,7 @@ function TabWhatsApp() {
         </div>
         <button
           onClick={handleConnect}
-          className="flex items-center gap-2 bg-[#FF4D1C] hover:bg-[#e63d0e] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors"
+          className="flex items-center gap-2 bg-[#FF6000] hover:bg-[#E55500] text-white text-sm font-bold px-5 py-2.5 rounded-lg transition-colors"
         >
           <QrCode size={15} />
           Conectar WhatsApp
@@ -355,7 +355,7 @@ function TabAgente() {
               onClick={() => toggleDia(d.id)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
                 dias.includes(d.id)
-                  ? 'bg-[#FF4D1C] text-white'
+                  ? 'bg-[#FF6000] text-white'
                   : 'bg-[#0D0D0D] border border-[#2a2a2a] text-[#555] hover:text-white'
               }`}
             >
@@ -436,16 +436,16 @@ function TabPlano() {
   return (
     <div className="space-y-5">
       {/* Plano atual */}
-      <div className="bg-[#FF4D1C]/5 border border-[#FF4D1C]/20 rounded-2xl p-5">
+      <div className="bg-[#FF6000]/5 border border-[#FF6000]/20 rounded-2xl p-5">
         <div className="flex items-center justify-between mb-4">
           <div>
             <p className="text-[#888] text-xs font-medium uppercase tracking-wider">Plano atual</p>
-            <p className="text-white text-2xl font-bold mt-1">Pro <span className="text-[#FF4D1C]">✦</span></p>
+            <p className="text-white text-2xl font-bold mt-1">Pro <span className="text-[#FF6000]">✦</span></p>
             <p className="text-[#555] text-sm">{plano.valor} · Renova em {plano.renovacao}</p>
           </div>
-          <CheckCircle2 size={32} className="text-[#FF4D1C]" />
+          <CheckCircle2 size={32} className="text-[#FF6000]" />
         </div>
-        <button className="text-xs text-[#FF4D1C] border border-[#FF4D1C]/30 hover:bg-[#FF4D1C]/10 px-4 py-2 rounded-lg transition-colors font-medium">
+        <button className="text-xs text-[#FF6000] border border-[#FF6000]/30 hover:bg-[#FF6000]/10 px-4 py-2 rounded-lg transition-colors font-medium">
           Fazer upgrade para Enterprise
         </button>
       </div>
@@ -463,7 +463,7 @@ function TabPlano() {
             </div>
             <div className="h-2 bg-[#1f1f1f] rounded-full overflow-hidden">
               <div
-                className={`h-full rounded-full transition-all ${pct(item.used, item.total) > 80 ? 'bg-red-400' : 'bg-[#FF4D1C]'}`}
+                className={`h-full rounded-full transition-all ${pct(item.used, item.total) > 80 ? 'bg-red-400' : 'bg-[#FF6000]'}`}
                 style={{ width: `${pct(item.used, item.total)}%` }}
               />
             </div>
@@ -503,7 +503,7 @@ export default function Configuracoes() {
               onClick={() => setTab(id)}
               className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-t-lg transition-colors -mb-px border-b-2 ${
                 tab === id
-                  ? 'text-[#FF4D1C] border-[#FF4D1C] bg-[#FF4D1C]/5'
+                  ? 'text-[#FF6000] border-[#FF6000] bg-[#FF6000]/5'
                   : 'text-[#555] border-transparent hover:text-white'
               }`}
             >

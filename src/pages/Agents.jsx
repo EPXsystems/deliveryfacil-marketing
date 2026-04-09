@@ -23,10 +23,10 @@ const INITIAL_AGENTS = [
     name: 'Onboarding de Trials',
     description: 'Guia novos clientes em trial pelo processo de configuração. Envia tutoriais em sequência e monitora o engajamento.',
     icon: BookOpen,
-    color: '#FF4D1C',
-    colorBg: 'bg-[#FF4D1C]/10',
-    colorText: 'text-[#FF4D1C]',
-    colorBorder: 'border-[#FF4D1C]/20',
+    color: '#FF6000',
+    colorBg: 'bg-[#FF6000]/10',
+    colorText: 'text-[#FF6000]',
+    colorBorder: 'border-[#FF6000]/20',
     active: true,
     lastRun: '2026-04-06 08:50',
     totalActions: 432,
@@ -57,7 +57,7 @@ function Toggle({ active, onChange }) {
     <button
       onClick={onChange}
       className={`relative w-10 h-5 rounded-full transition-colors duration-200 focus:outline-none ${
-        active ? 'bg-[#FF4D1C]' : 'bg-[#2a2a2a]'
+        active ? 'bg-[#FF6000]' : 'bg-[#2a2a2a]'
       }`}
     >
       <span
@@ -228,7 +228,7 @@ export default function Agents() {
         {/* Log section */}
         <div className="mt-6 bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-4">
-            <Activity size={14} className="text-[#FF4D1C]" />
+            <Activity size={14} className="text-[#FF6000]" />
             <h2 className="text-white text-sm font-semibold">Log de Execuções</h2>
           </div>
           <div className="space-y-2.5">

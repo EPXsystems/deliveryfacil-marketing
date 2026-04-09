@@ -12,7 +12,7 @@ const STATUS_COLOR = {
   Captado:   '#60a5fa',
   Contatado: '#facc15',
   Respondeu: '#c084fc',
-  Trial:     '#FF4D1C',
+  Trial:     '#FF6000',
   Cliente:   '#34d399',
   Perdido:   '#444',
 }
@@ -58,7 +58,7 @@ function buildSources(leads) {
     const f = l.fonte || 'Google Maps'
     map[f] = (map[f] || 0) + 1
   })
-  const colors = ['#FF4D1C', '#FF8C5A', '#FFB899', '#60a5fa']
+  const colors = ['#FF6000', '#FF8C5A', '#FFB899', '#60a5fa']
   return Object.entries(map).map(([name, value], i) => ({ name, value, color: colors[i] || '#888' }))
 }
 
@@ -128,18 +128,18 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 size={28} className="animate-spin text-[#FF4D1C]" />
+          <Loader2 size={28} className="animate-spin text-[#FF6000]" />
         </div>
       ) : (
         <>
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {kpis.map(kpi => (
-              <div key={kpi.id} className="bg-[#111111] border border-[#1f1f1f] rounded-xl p-5 flex flex-col gap-3 hover:border-[#FF4D1C]/30 transition-colors">
+              <div key={kpi.id} className="bg-[#111111] border border-[#1f1f1f] rounded-xl p-5 flex flex-col gap-3 hover:border-[#FF6000]/30 transition-colors">
                 <div className="flex items-center justify-between">
                   <span className="text-[#888] text-xs font-medium uppercase tracking-wider">{kpi.label}</span>
-                  <div className="w-8 h-8 rounded-lg bg-[#FF4D1C]/10 flex items-center justify-center">
-                    <kpi.icon size={15} className="text-[#FF4D1C]" />
+                  <div className="w-8 h-8 rounded-lg bg-[#FF6000]/10 flex items-center justify-center">
+                    <kpi.icon size={15} className="text-[#FF6000]" />
                   </div>
                 </div>
                 <div className="text-2xl font-bold text-white">{kpi.value}</div>
@@ -158,7 +158,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-white text-sm font-semibold">Evolução Semanal</h2>
                 <div className="flex items-center gap-4 text-xs text-[#555]">
-                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FF4D1C] inline-block"/>Leads</span>
+                  <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FF6000] inline-block"/>Leads</span>
                   <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#FF8C5A] inline-block"/>Trials</span>
                   <span className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-emerald-400 inline-block"/>Clientes</span>
                 </div>
@@ -172,8 +172,8 @@ export default function Dashboard() {
                   <AreaChart data={weekly} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                     <defs>
                       <linearGradient id="gLeads" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FF4D1C" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="#FF4D1C" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#FF6000" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#FF6000" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="gTrials" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#FF8C5A" stopOpacity={0.3}/>
@@ -188,7 +188,7 @@ export default function Dashboard() {
                     <XAxis dataKey="week" tick={{ fill:'#555', fontSize:11 }} axisLine={false} tickLine={false}/>
                     <YAxis tick={{ fill:'#555', fontSize:11 }} axisLine={false} tickLine={false}/>
                     <Tooltip content={<CustomTooltip/>}/>
-                    <Area type="monotone" dataKey="leads"    name="Leads"    stroke="#FF4D1C" strokeWidth={2} fill="url(#gLeads)"    dot={false}/>
+                    <Area type="monotone" dataKey="leads"    name="Leads"    stroke="#FF6000" strokeWidth={2} fill="url(#gLeads)"    dot={false}/>
                     <Area type="monotone" dataKey="trials"   name="Trials"   stroke="#FF8C5A" strokeWidth={2} fill="url(#gTrials)"   dot={false}/>
                     <Area type="monotone" dataKey="clientes" name="Clientes" stroke="#34d399" strokeWidth={2} fill="url(#gClientes)" dot={false}/>
                   </AreaChart>
