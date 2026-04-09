@@ -1,4 +1,4 @@
-export const API = 'https://man-mills-musician-subscriptions.trycloudflare.com'
+export const API = 'https://scraper-api.6fun9h.easypanel.host'
 
 export async function fetchLeads() {
   const res = await fetch(`${API}/leads`)
