@@ -1,24 +1,24 @@
 import { NavLink, useNavigate } from 'react-router-dom'
 import {
   LayoutDashboard,
-  KanbanSquare,
+  Kanban,
   Users,
   Bot,
-  Crosshair,
-  MessageCircle,
+  Search,
+  MessageSquare,
   Settings,
-  Workflow,
+  Zap,
   LogOut,
 } from 'lucide-react'
 
 const navItems = [
-  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/captacao',       icon: Crosshair,       label: 'Captação' },
-  { to: '/pipeline',       icon: KanbanSquare,    label: 'Pipeline' },
-  { to: '/leads',          icon: Users,           label: 'Leads' },
-  { to: '/conversas',      icon: MessageCircle,   label: 'Conversas' },
-  { to: '/agente',         icon: Bot,             label: 'Agente' },
-  { to: '/automacao',      icon: Workflow,        label: 'Automação' },
+  { to: '/dashboard',      icon: LayoutDashboard, label: 'Dashboard'     },
+  { to: '/captacao',       icon: Search,          label: 'Captação'      },
+  { to: '/pipeline',       icon: Kanban,          label: 'Pipeline'      },
+  { to: '/leads',          icon: Users,           label: 'Leads'         },
+  { to: '/conversas',      icon: MessageSquare,   label: 'Conversas'     },
+  { to: '/agentes',        icon: Bot,             label: 'Agentes'       },
+  { to: '/automacao',      icon: Zap,             label: 'Automação'     },
   { to: '/configuracoes',  icon: Settings,        label: 'Configurações' },
 ]
 

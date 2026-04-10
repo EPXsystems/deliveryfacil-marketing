@@ -8,6 +8,7 @@ import Pipeline from './pages/Pipeline'
 import Leads from './pages/Leads'
 import Conversas from './pages/Conversas'
 import Agente from './pages/Agente'
+import Agentes from './pages/Agentes'
 import Automacao from './pages/Automacao'
 import Configuracoes from './pages/Configuracoes'
 
@@ -31,6 +32,7 @@ export default function App() {
           <Route path="leads"         element={<Leads />} />
           <Route path="conversas"     element={<Conversas />} />
           <Route path="agente"        element={<Agente />} />
+          <Route path="agentes"       element={<Agentes />} />
           <Route path="automacao"     element={<Automacao />} />
           <Route path="configuracoes" element={<Configuracoes />} />
         </Route>
