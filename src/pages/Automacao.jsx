@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import {
-  Workflow, Play, Pause, RefreshCw, ChevronRight,
-  Loader2, CheckCircle2, XCircle, Clock, Target,
-  ArrowRight, TrendingUp, Calendar, RotateCcw,
-  AlertCircle, Zap,
+  Zap, Calendar, Settings2, RefreshCw, TrendingUp,
+  Plus, Trash2, Play, Loader2, CheckCircle2, XCircle,
+  Clock, ArrowRight, ChevronRight,
 } from 'lucide-react'
 import { API, authFetch } from '../api'
 import TesteBanner from '../components/TesteBanner'
@@ -43,96 +42,125 @@ function FunilStep({ label, value, pct, cor, isLast }) {
           <div className={`h-1.5 rounded-full transition-all duration-700 ${cor.replace('text-', 'bg-')}`} style={{ width: `${pct}%` }} />
         </div>
       </div>
-      {!isLast && (
-        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
-          <ArrowRight size={14} className="text-[#333]" />
-          {pct > 0 && <span className="text-[#444] text-[9px]">{pct}%</span>}
-        </div>
-      )}
+      {!isLast && <ArrowRight size={14} className="text-[#333] flex-shrink-0" />}
     </div>
   )
 }
 
+const REMARKETING_DAYS = [
+  { key: 'd1',  label: 'D+1',  desc: 'Follow-up leve — sem cobrança', preview: 'Oi! Passando pra ver se ficou alguma dúvida sobre o Delivery Fácil 😊 | O trial de 15 dias ainda tá disponível.' },
+  { key: 'd3',  label: 'D+3',  desc: 'Impacto financeiro — dado concreto', preview: 'Restaurantes que criaram canal próprio economizam em média R$800/mês em comissão. | Vale 5 minutos pra conhecer?' },
+  { key: 'd7',  label: 'D+7',  desc: 'Última tentativa — urgência suave', preview: 'Última vez que passo por aqui, prometo 😄 | Se não for o momento certo, tudo bem — fica o contato!' },
+  { key: 'd30', label: 'D+30', desc: 'Reativação fria — abordagem nova', preview: 'Oi! Vi que vocês estão entre os mais bem avaliados da região 🔥 | Tenho algo que pode aumentar seu faturamento.' },
+]
+
 export default function Automacao() {
   const [modoTeste, setModoTeste]   = useState(false)
   const [testNumber, setTestNumber] = useState('5551981538335')
-  const [status, setStatus]         = useState(null)
-  const [ativo, setAtivo]           = useState(false)
-  const [loading, setLoading]       = useState(true)
 
-  // Cards data
-  const [ciclos, setCiclos]       = useState([])
-  const [remarketing, setRemarketing] = useState([])
-
-  // Config
-  const [cfg, setCfg] = useState({
-    meta_dia: 10, delay_min_seg: 300, delay_max_seg: 720,
-    horario_inicio: '08:00', horario_fim: '20:00',
-    remarketing_ativo: true,
+  // ── Seção 1: Agendamento de captação ─────────────────
+  const [agendamentos, setAgendamentos] = useState([])
+  const [novoAg, setNovoAg] = useState({
+    categoria: 'restaurante', cidade: '', quantidade: 20,
+    horario: '08:00', repetir: true,
   })
-  const [salvando, setSalvando]   = useState(false)
-
-  // Execução
-  const [executando, setExecutando] = useState(false)
-  const [progresso, setProgresso]   = useState([])
-  const [aguardando, setAguardando] = useState(null)
-  const [fase, setFase]             = useState('')
-  const [resumo, setResumo]         = useState(null)
+  const [salvandoAg, setSalvandoAg]   = useState(false)
+  const [executando, setExecutando]   = useState(false)
+  const [progresso, setProgresso]     = useState([])
+  const [aguardando, setAguardando]   = useState(null)
+  const [fase, setFase]               = useState('')
+  const [resumo, setResumo]           = useState(null)
   const scrollRef = useRef(null)
+
+  // ── Seção 2: Config SDR ───────────────────────────────
+  const [sdrCfg, setSdrCfg] = useState({
+    ativo: true, meta_dia: 20,
+    horario_inicio: '08:00', horario_fim: '20:00',
+    delay_min_seg: 300, delay_max_seg: 720,
+  })
+  const [salvandoSdr, setSalvandoSdr] = useState(false)
+
+  // ── Seção 3: Remarketing ──────────────────────────────
+  const [rmkCfg, setRmkCfg] = useState({
+    ativo: true, d1: true, d3: true, d7: true, d30: false,
+  })
+  const [salvandoRmk, setSalvandoRmk] = useState(false)
+
+  // ── Seção 4: Funil ────────────────────────────────────
+  const [funil, setFunil] = useState({})
 
   useEffect(() => {
     authFetch(`${API}/teste/status`)
       .then(r => r.json())
       .then(d => { if (d.success) { setModoTeste(d.modo_teste); setTestNumber(d.test_number || '5551981538335') } })
       .catch(() => {})
-    fetchAll()
+    fetchAgendamentos()
+    fetchSdrConfig()
+    fetchFunil()
   }, [])
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [progresso, aguardando])
 
-  async function fetchAll() {
-    setLoading(true)
+  async function fetchAgendamentos() {
     try {
-      const [sRes, cRes, rRes] = await Promise.all([
-        authFetch(`${API}/automacao/status`).then(r => r.json()),
-        authFetch(`${API}/automacao/ciclos`).then(r => r.json()),
-        authFetch(`${API}/automacao/remarketing`).then(r => r.json()),
-      ])
-      if (sRes.success) {
-        setStatus(sRes)
-        setAtivo(sRes.ativo)
-        setCfg(c => ({
-          ...c,
-          meta_dia: sRes.hoje?.meta || 10,
-        }))
+      const r = await authFetch(`${API}/api/automacao/agendamentos`)
+      const d = await r.json()
+      if (d.success) setAgendamentos(d.agendamentos || [])
+    } catch {}
+  }
+
+  async function fetchSdrConfig() {
+    try {
+      const r = await authFetch(`${API}/api/automacao/sdr/config`)
+      const d = await r.json()
+      if (d.success && d.config) {
+        setSdrCfg(c => ({ ...c, ...d.config }))
+        if (d.config.remarketing_d1 !== undefined) {
+          setRmkCfg({
+            ativo:  d.config.remarketing_ativo  ?? true,
+            d1:     d.config.remarketing_d1     ?? true,
+            d3:     d.config.remarketing_d3     ?? true,
+            d7:     d.config.remarketing_d7     ?? true,
+            d30:    d.config.remarketing_d30    ?? false,
+          })
+        }
       }
-      if (cRes.success) setCiclos(cRes.ciclos || [])
-      if (rRes.success) setRemarketing(rRes.remarketing || [])
     } catch {}
-    setLoading(false)
   }
 
-  async function handleToggle() {
-    const novoAtivo = !ativo
-    setAtivo(novoAtivo)
+  async function fetchFunil() {
     try {
-      await authFetch(`${API}/automacao/toggle`, { method: 'POST' })
-      fetchAll()
-    } catch { setAtivo(!novoAtivo) }
+      const r = await authFetch(`${API}/automacao/status`)
+      const d = await r.json()
+      if (d.success) setFunil(d.funil || {})
+    } catch {}
   }
 
-  async function salvarConfig() {
-    setSalvando(true)
+  // ── Agendamento ───────────────────────────────────────
+  async function salvarAgendamento() {
+    if (!novoAg.cidade.trim()) return
+    setSalvandoAg(true)
     try {
-      await authFetch(`${API}/automacao/config`, {
-        method: 'PUT',
-        body: JSON.stringify(cfg),
+      const r = await authFetch(`${API}/api/automacao/agendamento`, {
+        method: 'POST',
+        body: JSON.stringify(novoAg),
       })
-      fetchAll()
+      const d = await r.json()
+      if (d.success) {
+        setNovoAg(c => ({ ...c, cidade: '' }))
+        fetchAgendamentos()
+      }
     } catch {}
-    setSalvando(false)
+    setSalvandoAg(false)
+  }
+
+  async function deletarAgendamento(id) {
+    try {
+      await authFetch(`${API}/api/automacao/agendamento/${id}`, { method: 'DELETE' })
+      fetchAgendamentos()
+    } catch {}
   }
 
   async function executarAgora() {
@@ -142,38 +170,32 @@ export default function Automacao() {
     setAguardando(null)
     setFase('')
     setResumo(null)
-
     try {
       const res = await authFetch(`${API}/automacao/executar-agora`, { method: 'POST' })
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
-
       while (true) {
         const { done, value } = await reader.read()
         if (done) break
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')
         buffer = lines.pop()
-
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue
           try {
             const evt = JSON.parse(line.slice(6))
-
             if (evt.tipo === 'inicio' || evt.tipo === 'fase') {
               setFase(evt.msg || `Fase: ${evt.fase}`)
             } else if (evt.tipo === 'captacao_ok') {
-              setFase(`Captados: ${evt.captados} novos leads (${evt.duplicatas} duplicatas ignoradas)`)
+              setFase(`Captados: ${evt.captados} novos leads (${evt.duplicatas} ignoradas)`)
             } else if (evt.tipo === 'captacao_erro') {
               setFase(`Captação: ${evt.msg} — continuando com leads existentes`)
             } else if (evt.tipo === 'progresso') {
               setAguardando(null)
               setProgresso(prev => {
                 const idx = prev.findIndex(p => p.lead === evt.lead)
-                if (idx >= 0) {
-                  const next = [...prev]; next[idx] = { ...next[idx], ...evt }; return next
-                }
+                if (idx >= 0) { const next = [...prev]; next[idx] = { ...next[idx], ...evt }; return next }
                 return [...prev, evt]
               })
             } else if (evt.tipo === 'aguardando') {
@@ -181,7 +203,7 @@ export default function Automacao() {
             } else if (evt.tipo === 'fim') {
               setAguardando(null)
               setResumo(evt)
-              fetchAll()
+              fetchFunil()
             } else if (evt.tipo === 'erro') {
               setAguardando(null)
               setResumo({ erro: evt.msg })
@@ -195,103 +217,144 @@ export default function Automacao() {
     setExecutando(false)
   }
 
-  // Funil
-  const f = status?.funil || {}
-  const total = (f.captados || 0) + (f.contatados || 0)
-  const funilSteps = [
-    { label: 'Captados',    value: f.captados    || 0, base: Math.max(1, f.captados || 1),   cor: 'text-white' },
-    { label: 'Contatados',  value: f.contatados  || 0, base: Math.max(1, f.captados || 1),    cor: 'text-[#FF6000]' },
-    { label: 'Responderam', value: f.responderam || 0, base: Math.max(1, f.contatados || 1),  cor: 'text-yellow-400' },
-    { label: 'Trial',       value: f.trial       || 0, base: Math.max(1, f.responderam || 1), cor: 'text-blue-400' },
-    { label: 'Clientes',    value: f.clientes    || 0, base: Math.max(1, f.trial || 1),        cor: 'text-emerald-400' },
-  ]
-
-  const hojeContatados = status?.hoje?.contatados || 0
-  const hojeMetaPct    = Math.min(100, Math.round((hojeContatados / (cfg.meta_dia || 10)) * 100))
-
-  if (loading) {
-    return (
-      <div className="flex flex-col h-screen overflow-hidden items-center justify-center gap-3">
-        <Loader2 size={32} className="animate-spin text-[#FF6000]" />
-        <p className="text-[#555] text-sm">Carregando automação...</p>
-      </div>
-    )
+  // ── SDR Config ────────────────────────────────────────
+  async function salvarSdrConfig() {
+    setSalvandoSdr(true)
+    try {
+      await authFetch(`${API}/api/automacao/sdr/config`, {
+        method: 'POST',
+        body: JSON.stringify({
+          ...sdrCfg,
+          remarketing_ativo: rmkCfg.ativo,
+          remarketing_d1:    rmkCfg.d1,
+          remarketing_d3:    rmkCfg.d3,
+          remarketing_d7:    rmkCfg.d7,
+          remarketing_d30:   rmkCfg.d30,
+        }),
+      })
+    } catch {}
+    setSalvandoSdr(false)
   }
+
+  // ── Remarketing ───────────────────────────────────────
+  async function salvarRemarketing() {
+    setSalvandoRmk(true)
+    try {
+      await authFetch(`${API}/api/automacao/sdr/config`, {
+        method: 'POST',
+        body: JSON.stringify({
+          remarketing_ativo: rmkCfg.ativo,
+          remarketing_d1:    rmkCfg.d1,
+          remarketing_d3:    rmkCfg.d3,
+          remarketing_d7:    rmkCfg.d7,
+          remarketing_d30:   rmkCfg.d30,
+        }),
+      })
+    } catch {}
+    setSalvandoRmk(false)
+  }
+
+  // ── Funil data ────────────────────────────────────────
+  const funilSteps = [
+    { label: 'Captados',    value: funil.captados    || 0, cor: 'text-white' },
+    { label: 'Contatados',  value: funil.contatados  || 0, cor: 'text-[#FF6000]' },
+    { label: 'Responderam', value: funil.responderam || 0, cor: 'text-yellow-400' },
+    { label: 'Trial',       value: funil.trial       || 0, cor: 'text-blue-400' },
+    { label: 'Clientes',    value: funil.clientes    || 0, cor: 'text-emerald-400' },
+  ]
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      {/* Modo Teste */}
       {modoTeste && <TesteBanner testNumber={testNumber} />}
 
-      {/* ── Header ─────────────────────────────────────────── */}
-      <div className="px-6 py-5 border-b border-[#1f1f1f] flex items-center justify-between flex-shrink-0">
-        <div>
-          <h1 className="text-xl font-bold text-white">Automação</h1>
-          <p className="text-[#555] text-sm mt-0.5">
-            {status?.proximo_ciclo
-              ? <span>{ativo ? '🟢' : '⚫'} {status.proximo_ciclo}</span>
-              : 'Ciclo automático diário de captação + SDR'}
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold ${
-            status?.executando ? 'bg-yellow-400/10 border-yellow-400/30 text-yellow-400' :
-            ativo              ? 'bg-emerald-400/10 border-emerald-400/30 text-emerald-400' :
-                                 'bg-[#1a1a1a] border-[#2a2a2a] text-[#555]'
-          }`}>
-            {status?.executando ? <Loader2 size={11} className="animate-spin" /> :
-             ativo              ? <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> :
-                                  <div className="w-1.5 h-1.5 rounded-full bg-[#444]" />}
-            {status?.executando ? 'Executando' : ativo ? 'Rodando' : 'Pausado'}
-          </div>
-          <span className="text-[#666] text-sm font-medium">
-            {ativo ? 'LIGADO' : 'DESLIGADO'}
-          </span>
-          <Toggle active={ativo} onChange={handleToggle} size="lg" />
-        </div>
+      {/* Header */}
+      <div className="px-6 py-5 border-b border-[#1f1f1f] flex-shrink-0">
+        <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <Zap size={20} className="text-[#FF6000]" /> Automação
+        </h1>
+        <p className="text-[#555] text-sm mt-0.5">Captação, SDR e remarketing automático</p>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 py-5 space-y-5">
 
-        {/* ── Card 1: Ciclo de hoje ────────────────────────── */}
+        {/* ── SEÇÃO 1: Agendamento de Captação ─────────────── */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <Target size={15} className="text-[#FF6000]" />
-                <h2 className="text-white text-sm font-semibold">Ciclo de Hoje</h2>
-                {status?.hoje?.cidade && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#FF6000]/10 text-[#FF6000] border border-[#FF6000]/20">
-                    {status.hoje.categoria} · {status.hoje.cidade}
-                  </span>
-                )}
-              </div>
-              <p className="text-[#444] text-xs mb-4">
-                {hojeContatados} de {cfg.meta_dia} leads contatados hoje
-              </p>
-              <div className="w-full bg-[#1a1a1a] rounded-full h-2 overflow-hidden mb-1">
-                <div
-                  className="bg-gradient-to-r from-[#FF6000] to-[#ff7a52] h-2 rounded-full transition-all duration-700"
-                  style={{ width: `${hojeMetaPct}%` }}
-                />
-              </div>
-              <div className="flex justify-between mt-1">
-                <span className="text-[#444] text-[10px]">0</span>
-                <span className="text-[#FF6000] text-[10px] font-semibold">{hojeMetaPct}%</span>
-                <span className="text-[#444] text-[10px]">{cfg.meta_dia}</span>
+          <div className="flex items-center gap-2 mb-5">
+            <Calendar size={15} className="text-[#FF6000]" />
+            <h2 className="text-white text-sm font-semibold">Agendamento de Captação</h2>
+          </div>
+
+          {/* Form */}
+          <div className="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Categoria</label>
+              <input
+                type="text"
+                placeholder="Ex: restaurante, pizzaria..."
+                value={novoAg.categoria}
+                onChange={e => setNovoAg(c => ({ ...c, categoria: e.target.value }))}
+                className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50 placeholder-[#333]"
+              />
+            </div>
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Cidade</label>
+              <input
+                type="text"
+                placeholder="Ex: São Paulo, SP"
+                value={novoAg.cidade}
+                onChange={e => setNovoAg(c => ({ ...c, cidade: e.target.value }))}
+                className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50 placeholder-[#333]"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3 mb-4">
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">
+                Quantidade — <span className="text-white font-bold">{novoAg.quantidade}</span>
+              </label>
+              <input
+                type="range" min={10} max={50} step={5}
+                value={novoAg.quantidade}
+                onChange={e => setNovoAg(c => ({ ...c, quantidade: +e.target.value }))}
+                className="w-full accent-[#FF6000]"
+              />
+              <div className="flex justify-between text-[#444] text-[10px] mt-0.5"><span>10</span><span>50</span></div>
+            </div>
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Horário</label>
+              <input
+                type="time"
+                value={novoAg.horario}
+                onChange={e => setNovoAg(c => ({ ...c, horario: e.target.value }))}
+                className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+              />
+            </div>
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Repetir diariamente</label>
+              <div className="flex items-center gap-2 mt-2.5">
+                <Toggle active={novoAg.repetir} onChange={() => setNovoAg(c => ({ ...c, repetir: !c.repetir }))} />
+                <span className="text-[#555] text-xs">{novoAg.repetir ? 'Sim' : 'Não'}</span>
               </div>
             </div>
+          </div>
 
+          <div className="flex items-center gap-3">
+            <button
+              onClick={salvarAgendamento}
+              disabled={salvandoAg || !novoAg.cidade.trim()}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-50 text-white transition-colors"
+            >
+              <Plus size={14} />
+              {salvandoAg ? 'Salvando...' : 'Salvar agendamento'}
+            </button>
             <button
               onClick={executarAgora}
               disabled={executando}
-              className={`flex items-center gap-2 text-sm font-bold px-5 py-2.5 rounded-xl transition-colors flex-shrink-0 ${
-                executando
-                  ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
-                  : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
+              className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold transition-colors ${
+                executando ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed' : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
               }`}
             >
-              {executando ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+              {executando ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
               {executando ? 'Executando...' : 'Executar agora'}
             </button>
           </div>
@@ -299,13 +362,11 @@ export default function Automacao() {
           {/* SSE Progress */}
           {(executando || progresso.length > 0 || fase) && (
             <div className="border border-[#1f1f1f] rounded-xl overflow-hidden mt-4">
-              {/* Status bar */}
               {resumo ? (
                 <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${resumo.erro ? 'bg-red-400/5' : 'bg-emerald-400/5'}`}>
                   {resumo.erro
                     ? <><XCircle size={14} className="text-red-400" /><span className="text-red-400 text-xs font-semibold">{resumo.erro}</span></>
-                    : <><CheckCircle2 size={14} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">Ciclo completo · {resumo.captados || 0} captados · {resumo.contatados || 0} contatados · {resumo.erros || 0} erros</span></>
-                  }
+                    : <><CheckCircle2 size={14} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">Completo · {resumo.captados || 0} captados · {resumo.contatados || 0} contatados · {resumo.erros || 0} erros</span></>}
                 </div>
               ) : fase ? (
                 <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF6000]/5">
@@ -313,9 +374,7 @@ export default function Automacao() {
                   <span className="text-[#FF6000] text-xs font-semibold">{fase}</span>
                 </div>
               ) : null}
-
-              {/* Lead list */}
-              <div ref={scrollRef} className="max-h-52 overflow-y-auto">
+              <div ref={scrollRef} className="max-h-48 overflow-y-auto">
                 {progresso.map((p, i) => (
                   <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#0D0D0D] last:border-0">
                     <ProgressIcon status={p.status} />
@@ -325,7 +384,7 @@ export default function Automacao() {
                         {p.status === 'gerando'  && <span className="text-yellow-400 text-[10px]">gerando...</span>}
                         {p.status === 'enviando' && <span className="text-[#FF6000] text-[10px]">enviando...</span>}
                         {p.status === 'ok'       && <span className="text-emerald-400 text-[10px]">enviado</span>}
-                        {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[160px]">{p.erro}</span>}
+                        {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[140px]">{p.erro}</span>}
                       </div>
                       {p.mensagem && p.status === 'ok' && (
                         <p className="text-[#444] text-[10px] mt-0.5 truncate">{p.mensagem}</p>
@@ -345,142 +404,161 @@ export default function Automacao() {
               </div>
             </div>
           )}
-        </div>
 
-        {/* ── Row: Config + Fila ───────────────────────────── */}
-        <div className="grid grid-cols-2 gap-5">
-
-          {/* Card 2: Configurações */}
-          <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <Workflow size={15} className="text-[#FF6000]" />
-              <h2 className="text-white text-sm font-semibold">Configurações</h2>
-            </div>
-            <div className="space-y-4">
-              {/* Meta */}
-              <div>
-                <label className="text-[#666] text-xs font-medium block mb-1.5">
-                  Meta diária — <span className="text-white font-bold">{cfg.meta_dia} leads</span>
-                </label>
-                <input
-                  type="range" min={10} max={50} step={5}
-                  value={cfg.meta_dia}
-                  onChange={e => setCfg(c => ({ ...c, meta_dia: +e.target.value }))}
-                  className="w-full accent-[#FF6000]"
-                />
-                <div className="flex justify-between text-[#444] text-[10px] mt-0.5">
-                  <span>10</span><span>50</span>
-                </div>
-              </div>
-
-              {/* Delays */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[#666] text-xs font-medium block mb-1.5">Delay mínimo (min)</label>
-                  <input
-                    type="number" min={3} max={30}
-                    value={Math.round(cfg.delay_min_seg / 60)}
-                    onChange={e => setCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[#666] text-xs font-medium block mb-1.5">Delay máximo (min)</label>
-                  <input
-                    type="number" min={3} max={60}
-                    value={Math.round(cfg.delay_max_seg / 60)}
-                    onChange={e => setCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                  />
-                </div>
-              </div>
-
-              {/* Horário */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[#666] text-xs font-medium block mb-1.5">Início</label>
-                  <input
-                    type="time"
-                    value={cfg.horario_inicio}
-                    onChange={e => setCfg(c => ({ ...c, horario_inicio: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                  />
-                </div>
-                <div>
-                  <label className="text-[#666] text-xs font-medium block mb-1.5">Fim</label>
-                  <input
-                    type="time"
-                    value={cfg.horario_fim}
-                    onChange={e => setCfg(c => ({ ...c, horario_fim: e.target.value }))}
-                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                  />
-                </div>
-              </div>
-
-              {/* Remarketing toggle */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-white text-xs font-medium">Remarketing automático</p>
-                  <p className="text-[#444] text-[10px]">D+1, D+3, D+7 e 30 dias</p>
-                </div>
-                <Toggle
-                  active={cfg.remarketing_ativo}
-                  onChange={() => setCfg(c => ({ ...c, remarketing_ativo: !c.remarketing_ativo }))}
-                />
-              </div>
-
-              <button
-                onClick={salvarConfig}
-                disabled={salvando}
-                className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-              >
-                {salvando ? 'Salvando...' : 'Salvar configurações'}
-              </button>
-            </div>
-          </div>
-
-          {/* Card 3: Fila de rotação */}
-          <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-4">
-              <RotateCcw size={15} className="text-[#FF6000]" />
-              <h2 className="text-white text-sm font-semibold">Próximos Ciclos</h2>
-              <span className="text-[#444] text-[10px]">rotação automática</span>
-            </div>
-            <div className="space-y-2">
-              {(status?.fila || []).length === 0 ? (
-                <p className="text-[#444] text-xs text-center py-4">Fila vazia</p>
-              ) : (
-                (status?.fila || []).map((item, i) => (
-                  <div
-                    key={i}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border transition-colors ${
-                      i === 0
-                        ? 'bg-[#FF6000]/10 border-[#FF6000]/25'
-                        : 'bg-[#0D0D0D] border-[#1a1a1a]'
-                    }`}
-                  >
-                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                      i === 0 ? 'bg-[#FF6000] text-white' : 'bg-[#1f1f1f] text-[#444]'
-                    }`}>
-                      {i + 1}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-semibold truncate ${i === 0 ? 'text-white' : 'text-[#666]'}`}>
-                        {item.categoria} · {item.cidade}
-                      </p>
-                      <p className={`text-[10px] ${i === 0 ? 'text-[#FF6000]' : 'text-[#444]'}`}>
-                        {item.data_prevista}
-                      </p>
-                    </div>
-                    {i === 0 && <ChevronRight size={13} className="text-[#FF6000] flex-shrink-0" />}
+          {/* Lista de agendamentos */}
+          {agendamentos.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-[#444] text-[10px] font-semibold uppercase tracking-wider">Agendamentos salvos</p>
+              {agendamentos.map(ag => (
+                <div key={ag.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#0D0D0D] border border-[#1a1a1a]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6000] flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-xs font-medium">{ag.categoria} · {ag.cidade}</p>
+                    <p className="text-[#444] text-[10px]">{ag.quantidade} leads · {ag.horario} · {ag.repetir ? 'diário' : 'uma vez'}</p>
                   </div>
-                ))
-              )}
+                  <button
+                    onClick={() => deletarAgendamento(ag.id)}
+                    className="text-[#333] hover:text-red-400 transition-colors flex-shrink-0"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              ))}
             </div>
+          )}
+        </div>
+
+        {/* ── SEÇÃO 2: Configurações do SDR ─────────────────── */}
+        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <Settings2 size={15} className="text-[#FF6000]" />
+              <h2 className="text-white text-sm font-semibold">Configurações do SDR</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[#555] text-xs">{sdrCfg.ativo ? 'Ativo' : 'Pausado'}</span>
+              <Toggle active={sdrCfg.ativo} onChange={() => setSdrCfg(c => ({ ...c, ativo: !c.ativo }))} />
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">
+                Meta diária — <span className="text-white font-bold">{sdrCfg.meta_dia} leads</span>
+              </label>
+              <input
+                type="range" min={5} max={50} step={5}
+                value={sdrCfg.meta_dia}
+                onChange={e => setSdrCfg(c => ({ ...c, meta_dia: +e.target.value }))}
+                className="w-full accent-[#FF6000]"
+              />
+              <div className="flex justify-between text-[#444] text-[10px] mt-0.5"><span>5</span><span>50</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[#666] text-xs font-medium block mb-1.5">Horário início</label>
+                <input
+                  type="time" value={sdrCfg.horario_inicio}
+                  onChange={e => setSdrCfg(c => ({ ...c, horario_inicio: e.target.value }))}
+                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                />
+              </div>
+              <div>
+                <label className="text-[#666] text-xs font-medium block mb-1.5">Horário fim</label>
+                <input
+                  type="time" value={sdrCfg.horario_fim}
+                  onChange={e => setSdrCfg(c => ({ ...c, horario_fim: e.target.value }))}
+                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-[#666] text-xs font-medium block mb-1.5">Delay mínimo (min)</label>
+                <input
+                  type="number" min={3} max={30}
+                  value={Math.round(sdrCfg.delay_min_seg / 60)}
+                  onChange={e => setSdrCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
+                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                />
+              </div>
+              <div>
+                <label className="text-[#666] text-xs font-medium block mb-1.5">Delay máximo (min)</label>
+                <input
+                  type="number" min={3} max={60}
+                  value={Math.round(sdrCfg.delay_max_seg / 60)}
+                  onChange={e => setSdrCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
+                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={salvarSdrConfig}
+              disabled={salvandoSdr}
+              className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+            >
+              {salvandoSdr ? 'Salvando...' : 'Salvar configurações'}
+            </button>
           </div>
         </div>
 
-        {/* ── Card 4: Funil completo ───────────────────────── */}
+        {/* ── SEÇÃO 3: Remarketing Automático ───────────────── */}
+        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <RefreshCw size={15} className="text-[#FF6000]" />
+              <h2 className="text-white text-sm font-semibold">Remarketing Automático</h2>
+              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
+                rmkCfg.ativo
+                  ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
+                  : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#444]'
+              }`}>{rmkCfg.ativo ? 'Ativo' : 'Inativo'}</span>
+            </div>
+            <Toggle active={rmkCfg.ativo} onChange={() => setRmkCfg(c => ({ ...c, ativo: !c.ativo }))} />
+          </div>
+
+          <div className="space-y-3 mb-4">
+            {REMARKETING_DAYS.map(day => (
+              <div key={day.key} className={`rounded-xl border p-3 transition-all ${
+                rmkCfg[day.key]
+                  ? 'bg-[#FF6000]/5 border-[#FF6000]/20'
+                  : 'bg-[#0D0D0D] border-[#1a1a1a]'
+              }`}>
+                <div className="flex items-center justify-between mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      day.key === 'd1'  ? 'bg-yellow-400/10 text-yellow-400' :
+                      day.key === 'd3'  ? 'bg-orange-400/10 text-orange-400' :
+                      day.key === 'd7'  ? 'bg-red-400/10 text-red-400' :
+                                          'bg-purple-400/10 text-purple-400'
+                    }`}>{day.label}</span>
+                    <span className="text-[#666] text-[10px]">{day.desc}</span>
+                  </div>
+                  <Toggle
+                    active={rmkCfg[day.key]}
+                    onChange={() => setRmkCfg(c => ({ ...c, [day.key]: !c[day.key] }))}
+                  />
+                </div>
+                {rmkCfg[day.key] && (
+                  <p className="text-[#444] text-[10px] italic pl-1 mt-1 leading-relaxed">&ldquo;{day.preview}&rdquo;</p>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <button
+            onClick={salvarRemarketing}
+            disabled={salvandoRmk}
+            className="w-full bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+          >
+            {salvandoRmk ? 'Salvando...' : 'Salvar remarketing'}
+          </button>
+        </div>
+
+        {/* ── SEÇÃO 4: Funil de Conversão ───────────────────── */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
           <div className="flex items-center gap-2 mb-5">
             <TrendingUp size={15} className="text-[#FF6000]" />
@@ -490,7 +568,7 @@ export default function Automacao() {
           <div className="flex items-stretch gap-1">
             {funilSteps.map((step, i) => {
               const prev = i > 0 ? funilSteps[i - 1].value : step.value
-              const pct  = prev > 0 ? Math.round((step.value / prev) * 100) : 0
+              const pct  = prev > 0 ? Math.round((step.value / prev) * 100) : (i === 0 ? 100 : 0)
               return (
                 <FunilStep
                   key={step.label}
@@ -503,110 +581,6 @@ export default function Automacao() {
               )
             })}
           </div>
-        </div>
-
-        {/* ── Card 5: Remarketing ──────────────────────────── */}
-        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <RefreshCw size={15} className="text-[#FF6000]" />
-              <h2 className="text-white text-sm font-semibold">Remarketing</h2>
-              <span className={`text-[10px] px-2 py-0.5 rounded-full border ${
-                cfg.remarketing_ativo
-                  ? 'bg-emerald-400/10 border-emerald-400/20 text-emerald-400'
-                  : 'bg-[#1a1a1a] border-[#2a2a2a] text-[#444]'
-              }`}>
-                {cfg.remarketing_ativo ? 'Ativo' : 'Inativo'}
-              </span>
-            </div>
-          </div>
-          {remarketing.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-[#444] text-xs">Nenhum lead pendente de follow-up</p>
-              <p className="text-[#333] text-[10px] mt-1">Aparece aqui quando leads são contatados via SDR</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-[#1f1f1f]">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-[#0D0D0D] border-b border-[#1f1f1f]">
-                    {['Lead', 'Tipo', 'Agendado para', 'Status'].map(h => (
-                      <th key={h} className="text-left text-[#444] text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {remarketing.map((r, i) => (
-                    <tr key={i} className="border-b border-[#0D0D0D] hover:bg-[#0D0D0D] transition-colors">
-                      <td className="px-4 py-2.5">
-                        <p className="text-white text-xs font-medium">{r.lead_nome || '—'}</p>
-                        <p className="text-[#444] text-[10px] font-mono">{r.telefone}</p>
-                      </td>
-                      <td className="px-4 py-2.5">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                          r.tipo === 'D+1' ? 'bg-yellow-400/10 text-yellow-400' :
-                          r.tipo === 'D+3' ? 'bg-orange-400/10 text-orange-400' :
-                          r.tipo === 'D+7' ? 'bg-red-400/10 text-red-400' :
-                                             'bg-purple-400/10 text-purple-400'
-                        }`}>{r.tipo}</span>
-                      </td>
-                      <td className="px-4 py-2.5 text-[#555] text-xs font-mono">{r.agendado_para}</td>
-                      <td className="px-4 py-2.5">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
-                          r.status === 'enviado'  ? 'bg-emerald-400/10 text-emerald-400' :
-                          r.status === 'erro'     ? 'bg-red-400/10 text-red-400' :
-                                                    'bg-[#1a1a1a] text-[#555]'
-                        }`}>
-                          {r.status === 'enviado' ? 'Enviado' : r.status === 'erro' ? 'Erro' : 'Pendente'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* ── Card 6: Histórico de ciclos ──────────────────── */}
-        <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <Calendar size={15} className="text-[#FF6000]" />
-            <h2 className="text-white text-sm font-semibold">Histórico de Ciclos</h2>
-          </div>
-          {ciclos.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-[#444] text-xs">Nenhum ciclo executado ainda</p>
-              <p className="text-[#333] text-[10px] mt-1">Clique em "Executar agora" para iniciar o primeiro ciclo</p>
-            </div>
-          ) : (
-            <div className="overflow-hidden rounded-xl border border-[#1f1f1f]">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr className="bg-[#0D0D0D] border-b border-[#1f1f1f]">
-                    {['Data', 'Cidade', 'Categoria', 'Captados', 'Contatados', 'Respostas', 'Conversões'].map(h => (
-                      <th key={h} className="text-left text-[#444] text-[10px] font-semibold uppercase tracking-wider px-4 py-2.5">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ciclos.map(c => (
-                    <tr key={c.id} className="border-b border-[#0D0D0D] hover:bg-[#0D0D0D] transition-colors">
-                      <td className="px-4 py-2.5 text-[#555] text-xs font-mono whitespace-nowrap">
-                        {c.criado_em?.slice(0, 16).replace('T', ' ') || '—'}
-                      </td>
-                      <td className="px-4 py-2.5 text-white text-xs font-medium">{c.cidade}</td>
-                      <td className="px-4 py-2.5 text-[#666] text-xs">{c.categoria}</td>
-                      <td className="px-4 py-2.5 text-white text-xs font-bold">{c.captados}</td>
-                      <td className="px-4 py-2.5 text-[#FF6000] text-xs font-bold">{c.contatados}</td>
-                      <td className="px-4 py-2.5 text-yellow-400 text-xs font-bold">{c.respostas}</td>
-                      <td className="px-4 py-2.5 text-emerald-400 text-xs font-bold">{c.conversoes}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
 
       </div>

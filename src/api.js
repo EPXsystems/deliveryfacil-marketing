@@ -1,4 +1,4 @@
-export const API = 'https://scraper-api.6fun9h.easypanel.host'
+export const API = 'https://amp-bristol-lucy-mills.trycloudflare.com'
 
 // ── Auth helpers ──────────────────────────────────────────
 export function getToken() {
