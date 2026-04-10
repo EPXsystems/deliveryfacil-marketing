@@ -1,11 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Bot, MessageSquare, Loader2, Code } from 'lucide-react'
 import { API, authFetch } from '../api'
-import { SYSTEM_PROMPT as THOMAS_PROMPT  } from '../data/agents/thomas'
-import { SYSTEM_PROMPT as SOFIA_PROMPT   } from '../data/agents/sofia'
-import { SYSTEM_PROMPT as ANA_PROMPT     } from '../data/agents/ana'
-import { SYSTEM_PROMPT as MAX_PROMPT     } from '../data/agents/max'
-import { SYSTEM_PROMPT as DOUGLAS_PROMPT } from '../data/agents/douglas'
+import { SYSTEM_PROMPT as THOMAS_PROMPT    } from '../data/agents/thomas'
+import { SOFIA_PROMPT                       } from '../data/agents/sofia'
+import { ANA_PROMPT                         } from '../data/agents/ana'
+import { SYSTEM_PROMPT as MAX_PROMPT        } from '../data/agents/max'
+import { SYSTEM_PROMPT as DOUGLAS_PROMPT    } from '../data/agents/douglas'
 
 const AGENTES_DEF = [
   { nome: 'THOMAS',  label: 'Thomas',  papel: 'SDR + Closer', cor: '#FF6000', prompt: THOMAS_PROMPT  },
