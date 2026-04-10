@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Bot, MessageSquare, Loader2, Code } from 'lucide-react'
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { Bot, MessageSquare, Loader2, Code, X, ChevronRight, User, Cpu } from 'lucide-react'
 import { API, authFetch } from '../api'
 import { SYSTEM_PROMPT as THOMAS_PROMPT    } from '../data/agents/thomas'
 import { SOFIA_PROMPT                       } from '../data/agents/sofia'
@@ -35,12 +35,105 @@ function timeAgo(iso) {
   return `${Math.round(diff / 3600)}h`
 }
 
+function formatHora(iso) {
+  if (!iso) return ''
+  try {
+    return new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  } catch { return '' }
+}
+
+// ── Visualizador de Conversa ───────────────────────────────
+function ConversaModal({ numero, agente, onClose }) {
+  const [msgs, setMsgs] = useState([])
+  const [loading, setLoading] = useState(true)
+  const bottomRef = useRef(null)
+
+  useEffect(() => {
+    authFetch(`${API}/api/conversas/${encodeURIComponent(numero)}/mensagens`)
+      .then(r => r.json())
+      .then(d => {
+        if (d.success) setMsgs(d.mensagens || [])
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [numero])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs])
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/70 backdrop-blur-sm" onClick={onClose}>
+      <div
+        className="w-full sm:w-[480px] sm:max-w-lg bg-[#111] border border-[#222] rounded-t-2xl sm:rounded-2xl flex flex-col"
+        style={{ maxHeight: '85vh' }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#1f1f1f] flex-shrink-0">
+          <div>
+            <p className="text-white text-sm font-bold font-mono">{numero}</p>
+            <p className="text-[#555] text-xs mt-0.5">Agente: <span style={{ color: AGENTES_DEF.find(a => a.nome === agente)?.cor || '#888' }}>{agente}</span></p>
+          </div>
+          <button onClick={onClose} className="text-[#555] hover:text-white transition-colors">
+            <X size={18} />
+          </button>
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+          {loading ? (
+            <div className="flex justify-center py-10">
+              <Loader2 size={20} className="animate-spin text-[#FF6000]" />
+            </div>
+          ) : msgs.length === 0 ? (
+            <p className="text-[#444] text-xs text-center py-10">Nenhuma mensagem no histórico</p>
+          ) : (
+            msgs.map((m, i) => {
+              const isUser = m.role === 'user'
+              // Split pipe-separated agent blocks into separate bubbles
+              const blocos = isUser
+                ? [m.conteudo]
+                : m.conteudo.split(' | ').filter(Boolean)
+              return (
+                <div key={i} className={`flex flex-col gap-1 ${isUser ? 'items-start' : 'items-end'}`}>
+                  {blocos.map((bloco, bi) => (
+                    <div
+                      key={bi}
+                      className={`max-w-[82%] px-3.5 py-2.5 rounded-2xl text-xs leading-relaxed ${
+                        isUser
+                          ? 'bg-[#1a1a1a] text-[#ccc] rounded-tl-sm'
+                          : 'bg-[#FF6000] text-white rounded-tr-sm'
+                      }`}
+                    >
+                      {bloco}
+                    </div>
+                  ))}
+                  <div className={`flex items-center gap-1 ${isUser ? 'pl-1' : 'pr-1'}`}>
+                    {isUser
+                      ? <User size={9} className="text-[#333]" />
+                      : <Cpu size={9} className="text-[#333]" />
+                    }
+                    <span className="text-[#333] text-[9px]">{formatHora(m.criado_em)}</span>
+                  </div>
+                </div>
+              )
+            })
+          )}
+          <div ref={bottomRef} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Agentes() {
   const [selected, setSelected]         = useState('THOMAS')
   const [statuses, setStatuses]         = useState({})
   const [conversas, setConversas]       = useState([])
   const [loadingConversas, setLoadingConversas] = useState(false)
   const [toggling, setToggling]         = useState(false)
+  const [viewConversa, setViewConversa] = useState(null) // { numero, agente }
 
   const agente = AGENTES_DEF.find(a => a.nome === selected)
 
@@ -88,6 +181,15 @@ export default function Agentes() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
+      {/* Modal visualizador */}
+      {viewConversa && (
+        <ConversaModal
+          numero={viewConversa.numero}
+          agente={viewConversa.agente}
+          onClose={() => setViewConversa(null)}
+        />
+      )}
+
       {/* Header */}
       <div className="px-6 py-5 border-b border-[#1f1f1f] flex-shrink-0">
         <h1 className="text-xl font-bold text-white flex items-center gap-2">
@@ -160,7 +262,11 @@ export default function Agentes() {
           ) : (
             <div className="space-y-2">
               {conversas.map((c, i) => (
-                <div key={i} className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0D0D0D]">
+                <button
+                  key={i}
+                  onClick={() => setViewConversa({ numero: c.numero, agente: selected })}
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-[#0D0D0D] hover:bg-[#151515] hover:border-[#FF6000]/20 border border-transparent transition-all text-left group"
+                >
                   <div className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-xs font-mono truncate">{c.numero}</p>
@@ -172,7 +278,8 @@ export default function Agentes() {
                     <p className="text-[#444] text-[10px]">{timeAgo(c.ultima_msg)} atrás</p>
                     <p className="text-[#333] text-[10px]">{c.total_msgs} msgs</p>
                   </div>
-                </div>
+                  <ChevronRight size={12} className="text-[#333] group-hover:text-[#FF6000] transition-colors flex-shrink-0" />
+                </button>
               ))}
             </div>
           )}
