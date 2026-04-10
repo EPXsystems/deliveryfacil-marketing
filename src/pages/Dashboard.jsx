@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react'
-import { Users, Phone, TrendingUp, FlaskConical, Loader2, Bot, ArrowRight } from 'lucide-react'
+import { Users, Phone, TrendingUp, MessageSquare, Bot, ArrowRight } from 'lucide-react'
 import { API, authFetch } from '../api'
 
 const AGENTES_DEF = [
@@ -16,7 +16,7 @@ const AGENTE_COR = {
 }
 
 // ── Stat Card ─────────────────────────────────────────────
-function StatCard({ label, value, icon: Icon, loading }) {
+function StatCard({ label, value, icon: Icon, loading, sub }) {
   return (
     <div className="bg-[#111111] border border-[#1f1f1f] rounded-xl p-5 flex flex-col gap-3 hover:border-[#FF6000]/30 transition-colors">
       <div className="flex items-center justify-between">
@@ -30,6 +30,7 @@ function StatCard({ label, value, icon: Icon, loading }) {
           ? <div className="w-12 h-7 bg-[#1f1f1f] rounded animate-pulse" />
           : value}
       </div>
+      {sub && !loading && <p className="text-[#444] text-[10px] -mt-1">{sub}</p>}
     </div>
   )
 }
@@ -52,13 +53,20 @@ function AgentCard({ agente }) {
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
 
-  useEffect(() => {
-    authFetch(`${API}/api/agents/${agente.nome}/status`)
-      .then(r => r.json())
-      .then(d => { if (d.success) setData(d) })
-      .catch(() => {})
-      .finally(() => setLoading(false))
+  const fetchStatus = useCallback(async () => {
+    try {
+      const r = await authFetch(`${API}/api/agents/${agente.nome}/status`)
+      const d = await r.json()
+      if (d.success) setData(d)
+    } catch {}
+    setLoading(false)
   }, [agente.nome])
+
+  useEffect(() => {
+    fetchStatus()
+    const id = setInterval(fetchStatus, 30000)
+    return () => clearInterval(id)
+  }, [fetchStatus])
 
   async function handleToggle() {
     setToggling(true)
@@ -136,7 +144,6 @@ export default function Dashboard() {
   const [stats, setStats]           = useState(null)
   const [loadingStats, setLoadingStats] = useState(true)
   const [logs, setLogs]             = useState([])
-  const [funil, setFunil]           = useState({})
 
   const fetchStats = useCallback(async () => {
     try {
@@ -155,21 +162,12 @@ export default function Dashboard() {
     } catch {}
   }, [])
 
-  const fetchFunil = useCallback(async () => {
-    try {
-      const r = await authFetch(`${API}/automacao/status`)
-      const d = await r.json()
-      if (d.success && d.funil) setFunil(d.funil)
-    } catch {}
-  }, [])
-
   useEffect(() => {
     fetchStats()
     fetchLogs()
-    fetchFunil()
-    const id = setInterval(() => { fetchLogs(); fetchStats() }, 5000)
+    const id = setInterval(() => { fetchLogs(); fetchStats() }, 10000)
     return () => clearInterval(id)
-  }, [fetchStats, fetchLogs, fetchFunil])
+  }, [fetchStats, fetchLogs])
 
   function formatHora(iso) {
     if (!iso) return ''
@@ -193,10 +191,11 @@ export default function Dashboard() {
 
       {/* Seção 1 — KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Leads captados hoje" value={stats?.leads_hoje ?? 0}      icon={Users}        loading={loadingStats} />
-        <StatCard label="Contatados hoje"      value={stats?.contatados_hoje ?? 0} icon={Phone}        loading={loadingStats} />
-        <StatCard label="Responderam hoje"     value={stats?.responderam_hoje ?? 0} icon={TrendingUp}  loading={loadingStats} />
-        <StatCard label="Trials ativos"        value={stats?.trials_ativos ?? 0}   icon={FlaskConical} loading={loadingStats} />
+        <StatCard label="Leads captados hoje" value={stats?.leads_hoje ?? 0}        icon={Users}          loading={loadingStats} />
+        <StatCard label="Contatados hoje"     value={stats?.contatados_hoje ?? 0}   icon={Phone}          loading={loadingStats} />
+        <StatCard label="Responderam hoje"    value={stats?.responderam_hoje ?? 0}  icon={TrendingUp}     loading={loadingStats} />
+        <StatCard label="Msgs processadas"    value={stats?.msgs_processadas ?? 0}  icon={MessageSquare}  loading={loadingStats}
+          sub={stats?.total_leads ? `${stats.total_leads} leads · ${stats.clientes} clientes` : undefined} />
       </div>
 
       {/* Seção 2 — Agentes */}
@@ -235,7 +234,7 @@ export default function Dashboard() {
         <h2 className="text-white text-sm font-semibold mb-5 flex items-center gap-2">
           <TrendingUp size={15} className="text-[#FF6000]" /> Funil de Conversão
         </h2>
-        <FunilBar funil={funil} />
+        <FunilBar funil={stats?.funil || {}} />
       </div>
     </div>
   )
