@@ -2,10 +2,23 @@ import { useState, useEffect, useRef } from 'react'
 import {
   Zap, Calendar, Settings2, RefreshCw, TrendingUp,
   Plus, Trash2, Play, Loader2, CheckCircle2, XCircle,
-  Clock, ArrowRight, ChevronRight,
+  Clock, ArrowRight, ChevronDown, Bike,
 } from 'lucide-react'
 import { API, authFetch } from '../api'
 import TesteBanner from '../components/TesteBanner'
+
+const CATEGORIAS = [
+  'Pizzaria', 'Hamburgueria', 'Sushi', 'Lanchonete', 'Churrascaria',
+  'Açaí', 'Pastelaria', 'Esfiharia', 'Cafeteria', 'Restaurante', 'Delivery',
+]
+
+const CIDADES = [
+  'Campo Bom', 'Novo Hamburgo', 'São Leopoldo', 'Porto Alegre',
+  'Caxias do Sul', 'Canoas', 'Pelotas', 'Santa Maria',
+  'Gravataí', 'Sapucaia do Sul', 'Sapiranga', 'Dois Irmãos',
+]
+
+const QUANTITIES = [10, 20, 50]
 
 // ── Toggle ────────────────────────────────────────────────
 function Toggle({ active, onChange, size = 'md' }) {
@@ -61,8 +74,8 @@ export default function Automacao() {
   // ── Seção 1: Agendamento de captação ─────────────────
   const [agendamentos, setAgendamentos] = useState([])
   const [novoAg, setNovoAg] = useState({
-    categoria: 'restaurante', cidade: '', quantidade: 20,
-    horario: '08:00', repetir: true,
+    categoria: '', cidade: '', bairro: '', delivery: false,
+    quantidade: 20, horario: '08:00', repetir: true,
   })
   const [salvandoAg, setSalvandoAg]   = useState(false)
   const [executando, setExecutando]   = useState(false)
@@ -140,12 +153,16 @@ export default function Automacao() {
 
   // ── Agendamento ───────────────────────────────────────
   async function salvarAgendamento() {
-    if (!novoAg.cidade.trim()) return
+    if (!novoAg.cidade || !novoAg.categoria) return
     setSalvandoAg(true)
     try {
+      const payload = {
+        ...novoAg,
+        categoria: novoAg.delivery ? `${novoAg.categoria} delivery` : novoAg.categoria,
+      }
       const r = await authFetch(`${API}/api/automacao/agendamento`, {
         method: 'POST',
-        body: JSON.stringify(novoAg),
+        body: JSON.stringify(payload),
       })
       const d = await r.json()
       if (d.success) {
@@ -284,54 +301,101 @@ export default function Automacao() {
             <h2 className="text-white text-sm font-semibold">Agendamento de Captação</h2>
           </div>
 
-          {/* Form */}
-          <div className="grid grid-cols-2 gap-3 mb-3">
-            <div>
+          {/* Form — linha 1: categoria + cidade + bairro */}
+          <div className="flex flex-wrap gap-3 mb-3">
+            <div className="min-w-40">
               <label className="text-[#666] text-xs font-medium block mb-1.5">Categoria</label>
-              <input
-                type="text"
-                placeholder="Ex: restaurante, pizzaria..."
-                value={novoAg.categoria}
-                onChange={e => setNovoAg(c => ({ ...c, categoria: e.target.value }))}
-                className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50 placeholder-[#333]"
-              />
+              <div className="relative">
+                <select
+                  value={novoAg.categoria}
+                  onChange={e => setNovoAg(c => ({ ...c, categoria: e.target.value }))}
+                  className="appearance-none w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#FF6000]/50 cursor-pointer"
+                >
+                  <option value="">Selecionar...</option>
+                  {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                </select>
+                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#444] pointer-events-none" />
+              </div>
             </div>
-            <div>
+
+            <div className="min-w-40">
               <label className="text-[#666] text-xs font-medium block mb-1.5">Cidade</label>
+              <div className="relative">
+                <select
+                  value={novoAg.cidade}
+                  onChange={e => setNovoAg(c => ({ ...c, cidade: e.target.value }))}
+                  className="appearance-none w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#FF6000]/50 cursor-pointer"
+                >
+                  <option value="">Selecionar...</option>
+                  {CIDADES.map(cid => <option key={cid} value={cid}>{cid}</option>)}
+                </select>
+                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#444] pointer-events-none" />
+              </div>
+            </div>
+
+            <div className="flex-1 min-w-32">
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Bairro <span className="text-[#444]">(opcional)</span></label>
               <input
                 type="text"
-                placeholder="Ex: São Paulo, SP"
-                value={novoAg.cidade}
-                onChange={e => setNovoAg(c => ({ ...c, cidade: e.target.value }))}
+                placeholder="Ex: Centro..."
+                value={novoAg.bairro}
+                onChange={e => setNovoAg(c => ({ ...c, bairro: e.target.value }))}
                 className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50 placeholder-[#333]"
               />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3 mb-4">
+
+          {/* Form — linha 2: delivery + quantidade + horário + repetir */}
+          <div className="flex flex-wrap gap-3 items-end mb-4">
             <div>
-              <label className="text-[#666] text-xs font-medium block mb-1.5">
-                Quantidade — <span className="text-white font-bold">{novoAg.quantidade}</span>
-              </label>
-              <input
-                type="range" min={10} max={50} step={5}
-                value={novoAg.quantidade}
-                onChange={e => setNovoAg(c => ({ ...c, quantidade: +e.target.value }))}
-                className="w-full accent-[#FF6000]"
-              />
-              <div className="flex justify-between text-[#444] text-[10px] mt-0.5"><span>10</span><span>50</span></div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Delivery</label>
+              <button
+                type="button"
+                onClick={() => setNovoAg(c => ({ ...c, delivery: !c.delivery }))}
+                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                  novoAg.delivery
+                    ? 'bg-[#FF6000]/15 border-[#FF6000]/40 text-[#FF6000]'
+                    : 'bg-[#0D0D0D] border-[#1f1f1f] text-[#666] hover:text-white'
+                }`}
+              >
+                <Bike size={14} />
+                {novoAg.delivery ? 'Ativo' : 'Incluir'}
+              </button>
             </div>
+
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Quantidade</label>
+              <div className="flex gap-1">
+                {QUANTITIES.map(q => (
+                  <button
+                    key={q}
+                    type="button"
+                    onClick={() => setNovoAg(c => ({ ...c, quantidade: q }))}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      novoAg.quantidade === q
+                        ? 'bg-[#FF6000] text-white'
+                        : 'bg-[#0D0D0D] border border-[#1f1f1f] text-[#666] hover:text-white'
+                    }`}
+                  >
+                    {q}
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div>
               <label className="text-[#666] text-xs font-medium block mb-1.5">Horário</label>
               <input
                 type="time"
                 value={novoAg.horario}
                 onChange={e => setNovoAg(c => ({ ...c, horario: e.target.value }))}
-                className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                className="bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
               />
             </div>
+
             <div>
               <label className="text-[#666] text-xs font-medium block mb-1.5">Repetir diariamente</label>
-              <div className="flex items-center gap-2 mt-2.5">
+              <div className="flex items-center gap-2 py-2">
                 <Toggle active={novoAg.repetir} onChange={() => setNovoAg(c => ({ ...c, repetir: !c.repetir }))} />
                 <span className="text-[#555] text-xs">{novoAg.repetir ? 'Sim' : 'Não'}</span>
               </div>
@@ -341,7 +405,7 @@ export default function Automacao() {
           <div className="flex items-center gap-3">
             <button
               onClick={salvarAgendamento}
-              disabled={salvandoAg || !novoAg.cidade.trim()}
+              disabled={salvandoAg || !novoAg.cidade || !novoAg.categoria}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-50 text-white transition-colors"
             >
               <Plus size={14} />
@@ -413,7 +477,7 @@ export default function Automacao() {
                 <div key={ag.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#0D0D0D] border border-[#1a1a1a]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#FF6000] flex-shrink-0" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs font-medium">{ag.categoria} · {ag.cidade}</p>
+                    <p className="text-white text-xs font-medium">{ag.categoria} · {ag.bairro ? `${ag.bairro}, ` : ''}{ag.cidade}</p>
                     <p className="text-[#444] text-[10px]">{ag.quantidade} leads · {ag.horario} · {ag.repetir ? 'diário' : 'uma vez'}</p>
                   </div>
                   <button
