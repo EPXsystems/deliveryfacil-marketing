@@ -80,46 +80,71 @@ function TabWhatsApp() {
   const [info, setInfo]           = useState(null)   // { numero, nome, foto }
   const [connectedAt, setConnectedAt] = useState(null)
   const [error, setError]         = useState('')
-  const pollRef  = useRef(null)
-  const qrRef    = useRef(null)
+  const pollRef      = useRef(null)
+  const qrRef        = useRef(null)
+  const heartbeatRef = useRef(null)
+  const errCount     = useRef(0)
+  const phaseRef     = useRef('loading')
 
-  // Checa status ao montar
+  function setPhaseSync(p) {
+    phaseRef.current = typeof p === 'function' ? p(phaseRef.current) : p
+    setPhase(phaseRef.current)
+  }
+
+  // Checa status ao montar e inicia heartbeat
   useEffect(() => {
     checkStatus()
-    return () => { clearInterval(pollRef.current); clearInterval(qrRef.current) }
+    // Heartbeat: re-verifica a cada 30s independente do estado
+    heartbeatRef.current = setInterval(checkStatus, 30000)
+    return () => {
+      clearInterval(pollRef.current)
+      clearInterval(qrRef.current)
+      clearInterval(heartbeatRef.current)
+    }
   }, [])
 
   async function checkStatus() {
     try {
       const s = await waStatus()
+      errCount.current = 0
       if (s.status === 'connected') {
         setInfo({ numero: s.numero, nome: s.nome, foto: s.foto })
-        if (!connectedAt) setConnectedAt(new Date().toLocaleDateString('pt-BR'))
-        setPhase('connected')
+        setConnectedAt(prev => prev || new Date().toLocaleDateString('pt-BR'))
+        setPhaseSync('connected')
         clearInterval(pollRef.current)
         clearInterval(qrRef.current)
       } else {
-        setPhase(p => p === 'qrcode' ? 'qrcode' : 'disconnected')
+        setPhaseSync(p => p === 'qrcode' ? 'qrcode' : 'disconnected')
       }
     } catch (e) {
-      setPhase('disconnected')
+      errCount.current += 1
+      if (phaseRef.current === 'loading' && errCount.current < 3) {
+        // Na primeira carga, tenta de novo em 5s antes de desistir
+        setTimeout(checkStatus, 5000)
+      } else if (errCount.current >= 3) {
+        // Só vira disconnected após 3 falhas consecutivas — evita flip por erro transitório
+        // Se já estava connected, mantém connected (pode ser um pico de latência)
+        if (phaseRef.current !== 'connected') {
+          setPhaseSync('disconnected')
+        }
+      }
     }
   }
 
   async function handleConnect() {
     setError('')
-    setPhase('connecting')
+    setPhaseSync('connecting')
     try {
       const res = await waConnect()
       if (res.status === 'connected') {
         setInfo({ numero: res.numero, nome: res.nome })
         setConnectedAt(new Date().toLocaleDateString('pt-BR'))
-        setPhase('connected')
+        setPhaseSync('connected')
         return
       }
       if (res.qrcode) {
         setQrcode(res.qrcode)
-        setPhase('qrcode')
+        setPhaseSync('qrcode')
         startPolling()
         startQRRefresh()
       } else {
@@ -127,7 +152,7 @@ function TabWhatsApp() {
       }
     } catch (e) {
       setError(e.message)
-      setPhase('disconnected')
+      setPhaseSync('disconnected')
     }
   }
 
@@ -138,7 +163,7 @@ function TabWhatsApp() {
       if (s.status === 'connected') {
         setInfo({ numero: s.numero, nome: s.nome, foto: s.foto })
         setConnectedAt(new Date().toLocaleDateString('pt-BR'))
-        setPhase('connected')
+        setPhaseSync('connected')
         clearInterval(pollRef.current)
         clearInterval(qrRef.current)
       }
@@ -154,13 +179,14 @@ function TabWhatsApp() {
   }
 
   async function handleDisconnect() {
-    setPhase('loading')
+    setPhaseSync('loading')
     await waDisconnect().catch(() => {})
     setQrcode(null)
     setInfo(null)
     clearInterval(pollRef.current)
     clearInterval(qrRef.current)
-    setPhase('disconnected')
+    errCount.current = 0
+    setPhaseSync('disconnected')
   }
 
   async function handleRefreshQR() {
