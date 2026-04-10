@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { MapPin, Plus, X, Search, Phone, ChevronDown, Loader2, Star } from 'lucide-react'
 import { fetchLeads, deleteLead, patchLeadStatus } from '../api'
 
-const STATUSES = ['Todos', 'Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Perdido']
+const STATUSES = ['Todos', 'Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Sem WA', 'Perdido']
 
 const STATUS_STYLE = {
   Captado:   'bg-blue-400/10 text-blue-400',
@@ -10,6 +10,7 @@ const STATUS_STYLE = {
   Respondeu: 'bg-purple-400/10 text-purple-400',
   Trial:     'bg-[#FF6000]/10 text-[#FF6000]',
   Cliente:   'bg-emerald-400/10 text-emerald-400',
+  'Sem WA':  'bg-rose-400/10 text-rose-400',
   Perdido:   'bg-[#1f1f1f] text-[#555]',
 }
 
