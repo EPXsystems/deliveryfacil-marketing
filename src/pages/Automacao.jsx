@@ -8,14 +8,25 @@ import { API, authFetch } from '../api'
 import TesteBanner from '../components/TesteBanner'
 
 const CATEGORIAS = [
-  'Pizzaria', 'Hamburgueria', 'Sushi', 'Lanchonete', 'Churrascaria',
-  'Açaí', 'Pastelaria', 'Esfiharia', 'Cafeteria', 'Restaurante', 'Delivery',
+  { valor: 'Hamburgueria',      emoji: '🍔' },
+  { valor: 'Pizzaria',          emoji: '🍕' },
+  { valor: 'Marmitex',          emoji: '🍱' },
+  { valor: 'Açaí',              emoji: '🥤' },
+  { valor: 'Frango Grelhados',  emoji: '🍗' },
+  { valor: 'Sushi Japonês',     emoji: '🍣' },
+  { valor: 'Churrascaria',      emoji: '🥩' },
+  { valor: 'Café Padaria',      emoji: '☕' },
+  { valor: 'Comida Mexicana',   emoji: '🌮' },
+  { valor: 'Comida Saudável',   emoji: '🥗' },
+  { valor: 'Italiana',          emoji: '🍝' },
+  { valor: 'Bar Petiscos',      emoji: '🍺' },
+  { valor: 'Delivery',          emoji: '🏪' },
 ]
 
 const CIDADES = [
-  'Campo Bom', 'Novo Hamburgo', 'São Leopoldo', 'Porto Alegre',
-  'Caxias do Sul', 'Canoas', 'Pelotas', 'Santa Maria',
-  'Gravataí', 'Sapucaia do Sul', 'Sapiranga', 'Dois Irmãos',
+  'Campo Bom', 'Novo Hamburgo', 'São Leopoldo', 'Canoas', 'Porto Alegre',
+  'Gramado', 'Caxias do Sul', 'Pelotas', 'Santa Maria', 'Passo Fundo',
+  'Florianópolis', 'Blumenau', 'Joinville', 'Curitiba', 'São Paulo',
 ]
 
 const QUANTITIES = [10, 20, 50]
@@ -75,7 +86,7 @@ export default function Automacao() {
   const [agendamentos, setAgendamentos] = useState([])
   const [novoAg, setNovoAg] = useState({
     categoria: '', cidade: '', bairro: '', delivery: false,
-    quantidade: 20, horario: '08:00', repetir: true, tipo: 'recorrente',
+    quantidade: 20, horario: '08:00', repetir: true, tipo: 'recorrente', data_unica: '',
   })
   const [salvandoAg, setSalvandoAg]   = useState(false)
   const [executando, setExecutando]   = useState(false)
@@ -91,7 +102,13 @@ export default function Automacao() {
     horario_inicio: '08:00', horario_fim: '20:00',
     delay_min_seg: 300, delay_max_seg: 720,
   })
-  const [salvandoSdr, setSalvandoSdr] = useState(false)
+  const [salvandoSdr, setSalvandoSdr]     = useState(false)
+  const [iniciandoSdr, setIniciandoSdr]   = useState(false)
+  const [progressoSdr, setProgressoSdr]   = useState([])
+  const [faseSdr, setFaseSdr]             = useState('')
+  const [resumoSdr, setResumoSdr]         = useState(null)
+  const [aguardandoSdr, setAguardandoSdr] = useState(null)
+  const scrollSdrRef = useRef(null)
 
   // ── Seção 3: Remarketing ──────────────────────────────
   const [rmkCfg, setRmkCfg] = useState({
@@ -122,6 +139,10 @@ export default function Automacao() {
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight
   }, [progresso, aguardando])
+
+  useEffect(() => {
+    if (scrollSdrRef.current) scrollSdrRef.current.scrollTop = scrollSdrRef.current.scrollHeight
+  }, [progressoSdr, aguardandoSdr])
 
   async function fetchAgendamentos() {
     try {
@@ -258,6 +279,58 @@ export default function Automacao() {
     setExecutando(false)
   }
 
+  // ── SDR Iniciar ──────────────────────────────────────
+  async function iniciarSdrAgora() {
+    if (iniciandoSdr) return
+    setIniciandoSdr(true)
+    setProgressoSdr([])
+    setFaseSdr('')
+    setResumoSdr(null)
+    setAguardandoSdr(null)
+    try {
+      const res = await authFetch(`${API}/api/sdr/iniciar`, { method: 'POST' })
+      const reader  = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop()
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue
+          try {
+            const evt = JSON.parse(line.slice(6))
+            if (evt.tipo === 'inicio') {
+              setFaseSdr(`Iniciando disparo para ${evt.total} leads...`)
+            } else if (evt.tipo === 'progresso') {
+              setAguardandoSdr(null)
+              if (evt.atual && evt.total) setFaseSdr(`Disparando ${evt.atual} de ${evt.total}...`)
+              setProgressoSdr(prev => {
+                const idx = prev.findIndex(p => p.lead === evt.lead)
+                if (idx >= 0) { const next = [...prev]; next[idx] = { ...next[idx], ...evt }; return next }
+                return [...prev, evt]
+              })
+            } else if (evt.tipo === 'aguardando') {
+              setAguardandoSdr(evt)
+            } else if (evt.tipo === 'fim') {
+              setAguardandoSdr(null)
+              setResumoSdr(evt)
+              fetchFunil()
+            } else if (evt.tipo === 'erro') {
+              setAguardandoSdr(null)
+              setResumoSdr({ erro: evt.msg })
+            }
+          } catch {}
+        }
+      }
+    } catch (e) {
+      setResumoSdr({ erro: e.message })
+    }
+    setIniciandoSdr(false)
+  }
+
   // ── SDR Config ────────────────────────────────────────
   async function salvarSdrConfig() {
     setSalvandoSdr(true)
@@ -351,7 +424,7 @@ export default function Automacao() {
                   className="appearance-none w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 pr-8 focus:outline-none focus:border-[#FF6000]/50 cursor-pointer"
                 >
                   <option value="">Selecionar...</option>
-                  {CATEGORIAS.map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                  {CATEGORIAS.map(cat => <option key={cat.valor} value={cat.valor}>{cat.emoji} {cat.valor}</option>)}
                 </select>
                 <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-[#444] pointer-events-none" />
               </div>
@@ -404,6 +477,21 @@ export default function Automacao() {
               </button>
             ))}
           </div>
+
+          {/* Data única — só aparece quando tipo === unico */}
+          {novoAg.tipo === 'unico' && (
+            <div className="flex items-center gap-3 mb-3">
+              <div>
+                <label className="text-[#666] text-xs font-medium block mb-1.5">Data</label>
+                <input
+                  type="date"
+                  value={novoAg.data_unica}
+                  onChange={e => setNovoAg(c => ({ ...c, data_unica: e.target.value }))}
+                  className="bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Form — linha 2: delivery + quantidade + horário + repetir */}
           <div className="flex flex-wrap gap-3 items-end mb-4">
@@ -569,20 +657,24 @@ export default function Automacao() {
           )}
         </div>
 
-        {/* ── SEÇÃO 2: Configurações do SDR ─────────────────── */}
+        {/* ── SEÇÃO 2: SDR — Disparo Automático ────────────── */}
         <div className="bg-[#111111] border border-[#1f1f1f] rounded-2xl p-5">
+          {/* Header */}
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-2">
-              <Settings2 size={15} className="text-[#FF6000]" />
-              <h2 className="text-white text-sm font-semibold">Configurações do SDR</h2>
+              <Zap size={15} className="text-[#FF6000]" />
+              <h2 className="text-white text-sm font-semibold">SDR — Disparo Automático</h2>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-[#555] text-xs">{sdrCfg.ativo ? 'Ativo' : 'Pausado'}</span>
+              <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${sdrCfg.ativo ? 'bg-emerald-400/10 text-emerald-400' : 'bg-[#1f1f1f] text-[#555]'}`}>
+                {sdrCfg.ativo ? 'Ativo' : 'Pausado'}
+              </span>
               <Toggle active={sdrCfg.ativo} onChange={() => setSdrCfg(c => ({ ...c, ativo: !c.ativo }))} />
             </div>
           </div>
 
           <div className="space-y-4">
+            {/* Meta diária */}
             <div>
               <label className="text-[#666] text-xs font-medium block mb-1.5">
                 Meta diária — <span className="text-white font-bold">{sdrCfg.meta_dia} leads</span>
@@ -596,54 +688,129 @@ export default function Automacao() {
               <div className="flex justify-between text-[#444] text-[10px] mt-0.5"><span>5</span><span>50</span></div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[#666] text-xs font-medium block mb-1.5">Horário início</label>
-                <input
-                  type="time" value={sdrCfg.horario_inicio}
-                  onChange={e => setSdrCfg(c => ({ ...c, horario_inicio: e.target.value }))}
-                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[#666] text-xs font-medium block mb-1.5">Horário fim</label>
-                <input
-                  type="time" value={sdrCfg.horario_fim}
-                  onChange={e => setSdrCfg(c => ({ ...c, horario_fim: e.target.value }))}
-                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-[#666] text-xs font-medium block mb-1.5">Delay mínimo (min)</label>
-                <input
-                  type="number" min={3} max={30}
-                  value={Math.round(sdrCfg.delay_min_seg / 60)}
-                  onChange={e => setSdrCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
-                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                />
-              </div>
-              <div>
-                <label className="text-[#666] text-xs font-medium block mb-1.5">Delay máximo (min)</label>
-                <input
-                  type="number" min={3} max={60}
-                  value={Math.round(sdrCfg.delay_max_seg / 60)}
-                  onChange={e => setSdrCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
-                  className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
-                />
+            {/* Horário de operação */}
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Horário de operação</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#444] text-[10px] block mb-1">Início</label>
+                  <input
+                    type="time" value={sdrCfg.horario_inicio}
+                    onChange={e => setSdrCfg(c => ({ ...c, horario_inicio: e.target.value }))}
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[#444] text-[10px] block mb-1">Fim</label>
+                  <input
+                    type="time" value={sdrCfg.horario_fim}
+                    onChange={e => setSdrCfg(c => ({ ...c, horario_fim: e.target.value }))}
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                  />
+                </div>
               </div>
             </div>
 
-            <button
-              onClick={salvarSdrConfig}
-              disabled={salvandoSdr}
-              className="w-full bg-[#FF6000] hover:bg-[#E55500] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
-            >
-              {salvandoSdr ? 'Salvando...' : 'Salvar configurações'}
-            </button>
+            {/* Delay entre disparos */}
+            <div>
+              <label className="text-[#666] text-xs font-medium block mb-1.5">Delay entre disparos</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[#444] text-[10px] block mb-1">Mínimo (min)</label>
+                  <input
+                    type="number" min={3} max={30}
+                    value={Math.round(sdrCfg.delay_min_seg / 60)}
+                    onChange={e => setSdrCfg(c => ({ ...c, delay_min_seg: Math.max(180, +e.target.value * 60) }))}
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                  />
+                </div>
+                <div>
+                  <label className="text-[#444] text-[10px] block mb-1">Máximo (min)</label>
+                  <input
+                    type="number" min={3} max={60}
+                    value={Math.round(sdrCfg.delay_max_seg / 60)}
+                    onChange={e => setSdrCfg(c => ({ ...c, delay_max_seg: Math.max(180, +e.target.value * 60) }))}
+                    className="w-full bg-[#0D0D0D] border border-[#1f1f1f] text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:border-[#FF6000]/50"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Botões */}
+            <div className="flex gap-3 pt-1">
+              <button
+                onClick={salvarSdrConfig}
+                disabled={salvandoSdr}
+                className="flex-1 border border-[#FF6000]/40 hover:border-[#FF6000]/70 disabled:opacity-50 text-[#FF6000] text-sm font-semibold py-2.5 rounded-xl transition-colors"
+              >
+                {salvandoSdr ? 'Salvando...' : 'Salvar configurações'}
+              </button>
+              <button
+                onClick={iniciarSdrAgora}
+                disabled={iniciandoSdr}
+                className={`flex-[1.4] flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl transition-colors ${
+                  iniciandoSdr
+                    ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
+                    : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
+                }`}
+              >
+                {iniciandoSdr ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+                {iniciandoSdr ? 'Disparando...' : '▶ Iniciar SDR Agora'}
+              </button>
+            </div>
+
+            {/* Info fila */}
+            <div className="border-t border-[#1a1a1a] pt-3 flex items-center justify-between">
+              <span className="text-[#444] text-xs">
+                Leads na fila: <span className="text-white font-semibold">{funil.captados || 0} captados</span>
+              </span>
+              <span className="text-[#444] text-xs">
+                Próximo disparo: <span className="text-white font-semibold">hoje às {sdrCfg.horario_inicio}</span>
+              </span>
+            </div>
           </div>
+
+          {/* SSE Progress SDR */}
+          {(iniciandoSdr || progressoSdr.length > 0 || faseSdr) && (
+            <div className="border border-[#1f1f1f] rounded-xl overflow-hidden mt-4">
+              {resumoSdr ? (
+                <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${resumoSdr.erro ? 'bg-red-400/5' : 'bg-emerald-400/5'}`}>
+                  {resumoSdr.erro
+                    ? <><XCircle size={14} className="text-red-400" /><span className="text-red-400 text-xs font-semibold">{resumoSdr.erro}</span></>
+                    : <><CheckCircle2 size={14} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">Completo · {resumoSdr.enviados || 0} enviados · {resumoSdr.erros || 0} erros</span></>}
+                </div>
+              ) : faseSdr ? (
+                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF6000]/5">
+                  <Loader2 size={12} className="animate-spin text-[#FF6000]" />
+                  <span className="text-[#FF6000] text-xs font-semibold">{faseSdr}</span>
+                </div>
+              ) : null}
+              <div ref={scrollSdrRef} className="max-h-48 overflow-y-auto">
+                {progressoSdr.map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#0D0D0D] last:border-0">
+                    <ProgressIcon status={p.status} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-white text-xs font-medium truncate">{p.lead}</span>
+                        {p.status === 'enviando' && <span className="text-[#FF6000] text-[10px]">enviando...</span>}
+                        {p.status === 'ok'       && <span className="text-emerald-400 text-[10px]">enviado</span>}
+                        {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[140px]">{p.erro}</span>}
+                      </div>
+                    </div>
+                    <span className="text-[#333] text-[10px] font-mono flex-shrink-0">{p.telefone}</span>
+                  </div>
+                ))}
+                {aguardandoSdr && (
+                  <div className="flex items-center gap-3 px-4 py-3 border-t border-[#1f1f1f]">
+                    <Clock size={12} className="text-[#FF6000] animate-pulse flex-shrink-0" />
+                    <span className="text-[#FF6000] text-xs">
+                      Aguardando {aguardandoSdr.segundos}s{aguardandoSdr.proximo ? ` antes de "${aguardandoSdr.proximo}"` : ''}...
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* ── SEÇÃO 3: Remarketing Automático ───────────────── */}
