@@ -292,7 +292,10 @@ export default function Automacao() {
     setResumoSdr(null)
     setAguardandoSdr(null)
     try {
-      const res = await authFetch(`${API}/api/sdr/iniciar`, { method: 'POST' })
+      const res = await authFetch(`${API}/api/sdr/iniciar`, {
+        method: 'POST',
+        body: JSON.stringify({ forcar: true }),
+      })
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -308,6 +311,8 @@ export default function Automacao() {
             const evt = JSON.parse(line.slice(6))
             if (evt.tipo === 'inicio') {
               setFaseSdr(`Iniciando disparo para ${evt.total} leads...`)
+            } else if (evt.tipo === 'aviso') {
+              setFaseSdr(`⚠ ${evt.msg}`)
             } else if (evt.tipo === 'progresso') {
               setAguardandoSdr(null)
               if (evt.atual && evt.total) setFaseSdr(`Disparando ${evt.atual} de ${evt.total}...`)
