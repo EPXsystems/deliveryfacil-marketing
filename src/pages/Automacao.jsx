@@ -284,7 +284,7 @@ export default function Automacao() {
     if (iniciandoSdr) return
     setIniciandoSdr(true)
     setProgressoSdr([])
-    setFaseSdr('')
+    setFaseSdr('Conectando ao servidor...')
     setResumoSdr(null)
     setAguardandoSdr(null)
     try {
