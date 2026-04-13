@@ -814,20 +814,41 @@ export default function Automacao() {
             </div>
           </div>
 
-          {/* Progresso SDR — persiste via polling mesmo trocando de página */}
+          {/* Painel Status SDR — persiste via polling mesmo trocando de página */}
           {(sdrEstado?.rodando || (sdrEstado?.log?.length > 0)) && (
             <div className="border border-[#1f1f1f] rounded-xl overflow-hidden mt-4">
-              {/* Header status */}
-              <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${sdrEstado.rodando ? 'bg-[#FF6000]/5' : 'bg-[#0D0D0D]'}`}>
-                {sdrEstado.rodando
-                  ? <><Loader2 size={12} className="animate-spin text-[#FF6000]" /><span className="text-[#FF6000] text-xs font-semibold flex-1">Disparando {sdrEstado.atual || 0}/{sdrEstado.total || 0}{sdrEstado.lead_atual ? ` — ${sdrEstado.lead_atual}` : '...'}</span></>
-                  : <><CheckCircle2 size={12} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold flex-1">Concluído · {sdrEstado.enviados || 0} enviados · {sdrEstado.erros || 0} erros</span></>
-                }
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-[#1f1f1f] bg-[#0D0D0D]">
+                <div className="flex items-center gap-2 mb-2">
+                  {sdrEstado.rodando
+                    ? <><span className="w-2 h-2 rounded-full bg-[#FF6000] animate-ping flex-shrink-0" /><span className="text-[#FF6000] text-xs font-bold">Rodando</span></>
+                    : sdrEstado.erros > 0
+                      ? <><span className="w-2 h-2 rounded-full bg-yellow-400 flex-shrink-0" /><span className="text-yellow-400 text-xs font-bold">Concluído com erros</span></>
+                      : <><span className="w-2 h-2 rounded-full bg-emerald-400 flex-shrink-0" /><span className="text-emerald-400 text-xs font-bold">Concluído</span></>
+                  }
+                  {sdrEstado.iniciado_em && (
+                    <span className="text-[#444] text-[10px] ml-auto">
+                      Início: {new Date(sdrEstado.iniciado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+                {/* Barra de progresso */}
                 {sdrEstado.total > 0 && (
-                  <span className="text-[#444] text-[10px] font-mono ml-auto">{sdrEstado.enviados}/{sdrEstado.total}</span>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-[10px] text-[#555]">
+                      <span>{sdrEstado.lead_atual ? `→ ${sdrEstado.lead_atual}` : `${sdrEstado.enviados} enviados · ${sdrEstado.erros} erros`}</span>
+                      <span className="font-mono">{sdrEstado.enviados + sdrEstado.erros}/{sdrEstado.total}</span>
+                    </div>
+                    <div className="w-full bg-[#1a1a1a] rounded-full h-1.5">
+                      <div
+                        className="h-1.5 rounded-full bg-[#FF6000] transition-all duration-500"
+                        style={{ width: `${Math.round(((sdrEstado.enviados + sdrEstado.erros) / sdrEstado.total) * 100)}%` }}
+                      />
+                    </div>
+                  </div>
                 )}
               </div>
-              {/* Log entries */}
+              {/* Log */}
               <div ref={scrollSdrRef} className="max-h-44 overflow-y-auto">
                 {(sdrEstado.log || []).map((entry, i) => (
                   <div key={i} className="flex items-start gap-3 px-4 py-2 border-b border-[#0D0D0D] last:border-0">
@@ -836,7 +857,7 @@ export default function Automacao() {
                       entry.msg.startsWith('✓') ? 'text-emerald-400' :
                       entry.msg.startsWith('✗') ? 'text-red-400' :
                       entry.msg.startsWith('⚠') ? 'text-yellow-400' :
-                      entry.msg.startsWith('⏳') ? 'text-[#FF6000]' :
+                      entry.msg.startsWith('⏳') ? 'text-[#FF6000]/80' :
                       'text-[#666]'
                     }`}>{entry.msg}</span>
                   </div>
