@@ -99,6 +99,13 @@ export default function Automacao() {
   })
   const [salvandoRmk, setSalvandoRmk] = useState(false)
 
+  // ── Toast ─────────────────────────────────────────────
+  const [toast, setToast] = useState(null)
+  function showToast(msg, type = 'ok') {
+    setToast({ msg, type })
+    setTimeout(() => setToast(null), 3000)
+  }
+
   // ── Seção 4: Funil ────────────────────────────────────
   const [funil, setFunil] = useState({})
 
@@ -129,7 +136,7 @@ export default function Automacao() {
       const r = await authFetch(`${API}/api/automacao/sdr/config`)
       const d = await r.json()
       if (d.success && d.config) {
-        setSdrCfg(c => ({ ...c, ...d.config }))
+        setSdrCfg(c => ({ ...c, ...d.config, horario_inicio: d.config.horario_inicio || '08:00' }))
         if (d.config.remarketing_d1 !== undefined) {
           setRmkCfg({
             ativo:  d.config.remarketing_ativo  ?? true,
@@ -169,8 +176,13 @@ export default function Automacao() {
       if (d.success) {
         setNovoAg(c => ({ ...c, cidade: '' }))
         fetchAgendamentos()
+        showToast('Agendamento salvo!')
+      } else {
+        showToast(d.error || 'Erro ao salvar agendamento', 'erro')
       }
-    } catch {}
+    } catch (e) {
+      showToast('Erro ao salvar agendamento', 'erro')
+    }
     setSalvandoAg(false)
   }
 
@@ -183,13 +195,24 @@ export default function Automacao() {
 
   async function executarAgora() {
     if (executando) return
+    if (!novoAg.categoria || !novoAg.cidade) {
+      showToast('Selecione categoria e cidade primeiro', 'erro')
+      return
+    }
     setExecutando(true)
     setProgresso([])
     setAguardando(null)
     setFase('')
     setResumo(null)
     try {
-      const res = await authFetch(`${API}/automacao/executar-agora`, { method: 'POST' })
+      const res = await authFetch(`${API}/api/captacao/executar`, {
+        method: 'POST',
+        body: JSON.stringify({
+          categoria: novoAg.delivery ? `${novoAg.categoria} delivery` : novoAg.categoria,
+          cidade: novoAg.cidade,
+          quantidade: novoAg.quantidade,
+        }),
+      })
       const reader  = res.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
@@ -239,7 +262,7 @@ export default function Automacao() {
   async function salvarSdrConfig() {
     setSalvandoSdr(true)
     try {
-      await authFetch(`${API}/api/automacao/sdr/config`, {
+      const r = await authFetch(`${API}/api/automacao/sdr/config`, {
         method: 'POST',
         body: JSON.stringify({
           ...sdrCfg,
@@ -250,7 +273,12 @@ export default function Automacao() {
           remarketing_d30:   rmkCfg.d30,
         }),
       })
-    } catch {}
+      const d = await r.json()
+      if (d.success) showToast('Configurações salvas!')
+      else showToast(d.error || 'Erro ao salvar', 'erro')
+    } catch {
+      showToast('Erro ao salvar configurações', 'erro')
+    }
     setSalvandoSdr(false)
   }
 
@@ -284,6 +312,16 @@ export default function Automacao() {
   return (
     <div className="flex flex-col h-screen overflow-hidden">
       {modoTeste && <TesteBanner testNumber={testNumber} />}
+
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold shadow-xl transition-all ${
+          toast.type === 'erro' ? 'bg-red-500/20 border border-red-500/40 text-red-400' : 'bg-emerald-500/20 border border-emerald-500/40 text-emerald-400'
+        }`}>
+          {toast.type === 'erro' ? <XCircle size={14} /> : <CheckCircle2 size={14} />}
+          {toast.msg}
+        </div>
+      )}
 
       {/* Header */}
       <div className="px-6 py-5 border-b border-[#1f1f1f] flex-shrink-0">

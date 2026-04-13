@@ -3,11 +3,11 @@ import { Users, Phone, TrendingUp, MessageSquare, Bot, ArrowRight } from 'lucide
 import { API, authFetch } from '../api'
 
 const AGENTES_DEF = [
-  { nome: 'THOMAS',  label: 'Thomas',  papel: 'SDR + Closer',  cor: '#FF6000', metricaLabel: 'Conversão'    },
-  { nome: 'SOFIA',   label: 'Sofia',   papel: 'Suporte',        cor: '#60a5fa', metricaLabel: 'Resolução'    },
-  { nome: 'ANA',     label: 'Ana',     papel: 'Reativação',     cor: '#c084fc', metricaLabel: 'Reengajamento'},
-  { nome: 'MAX',     label: 'Max',     papel: 'Onboarding',     cor: '#34d399', metricaLabel: 'Configurados' },
-  { nome: 'DOUGLAS', label: 'Douglas', papel: 'Financeiro',     cor: '#facc15', metricaLabel: 'Retidos'      },
+  { nome: 'THOMAS',  label: 'Thomas',  papel: 'SDR + Closer', cor: '#FF6000' },
+  { nome: 'SOFIA',   label: 'Sofia',   papel: 'Suporte',       cor: '#60a5fa' },
+  { nome: 'ANA',     label: 'Ana',     papel: 'Reativação',    cor: '#c084fc' },
+  { nome: 'MAX',     label: 'Max',     papel: 'Onboarding',    cor: '#34d399' },
+  { nome: 'DOUGLAS', label: 'Douglas', papel: 'Financeiro',    cor: '#facc15' },
 ]
 
 const AGENTE_COR = {
@@ -100,8 +100,10 @@ function AgentCard({ agente }) {
           </p>
         </div>
         <div>
-          <p className="text-[#555] text-[10px] uppercase tracking-wider">{agente.metricaLabel}</p>
-          <p className="text-[#333] text-lg font-bold mt-0.5">—</p>
+          <p className="text-[#555] text-[10px] uppercase tracking-wider">Msgs hoje</p>
+          <p className="text-white text-lg font-bold mt-0.5">
+            {loading ? <span className="text-[#333]">—</span> : (data?.msgs_hoje ?? data?.total_msgs ?? '—')}
+          </p>
         </div>
       </div>
     </div>
@@ -185,7 +187,7 @@ export default function Dashboard() {
         </div>
         <div className="flex items-center gap-2 bg-[#111111] border border-[#1f1f1f] rounded-lg px-3 py-2">
           <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[#888] text-xs">Ao vivo · 5s</span>
+          <span className="text-[#888] text-xs">Ao vivo · 10s</span>
         </div>
       </div>
 
