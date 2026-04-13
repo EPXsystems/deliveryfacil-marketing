@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react'
-import { MapPin, ChevronRight, Phone, Calendar, Loader2 } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { MapPin, ChevronRight, Phone, Calendar, Loader2, Zap } from 'lucide-react'
 import { API, authFetch, patchLeadStatus } from '../api'
 
 const COLUMNS = ['Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Sem WA', 'Perdido']
@@ -31,10 +31,23 @@ function formatDate(d) {
   return `${day}/${m}/${y}`
 }
 
-function LeadCard({ lead, onMove, onLose }) {
-  const next = NEXT_STATUS[lead.status]
+function LeadCard({ lead, onMove, onLose, sdrAtual }) {
+  const next       = NEXT_STATUS[lead.status]
+  const emDisparo  = sdrAtual && lead.nome === sdrAtual
+
   return (
-    <div className="bg-[#111111] border border-[#1f1f1f] rounded-xl p-4 hover:border-[#2a2a2a] transition-colors">
+    <div className={`bg-[#111111] border rounded-xl p-4 transition-all ${
+      emDisparo
+        ? 'border-[#FF6000]/60 shadow-[0_0_12px_rgba(255,96,0,0.15)] animate-pulse-subtle'
+        : 'border-[#1f1f1f] hover:border-[#2a2a2a]'
+    }`}>
+      {emDisparo && (
+        <div className="flex items-center gap-1.5 mb-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#FF6000] animate-ping" />
+          <span className="text-[#FF6000] text-[10px] font-semibold">SDR disparando agora...</span>
+        </div>
+      )}
+
       <p className="text-white text-sm font-semibold leading-tight mb-2">{lead.nome}</p>
 
       <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full mb-3 bg-blue-400/10 text-blue-400">
@@ -77,8 +90,10 @@ function LeadCard({ lead, onMove, onLose }) {
 }
 
 export default function Pipeline() {
-  const [byCol, setByCol]     = useState(COLUMNS.reduce((a, c) => ({ ...a, [c]: [] }), {}))
-  const [loading, setLoading] = useState(true)
+  const [byCol, setByCol]       = useState(COLUMNS.reduce((a, c) => ({ ...a, [c]: [] }), {}))
+  const [loading, setLoading]   = useState(true)
+  const [sdrStatus, setSdrStatus] = useState({ rodando: false, lead_atual: null, total: 0, enviados: 0 })
+  const wasRunning = useRef(false)
 
   async function fetchPipeline() {
     try {
@@ -92,7 +107,28 @@ export default function Pipeline() {
     }
   }
 
-  useEffect(() => { fetchPipeline() }, [])
+  async function pollSdrStatus() {
+    try {
+      const res  = await authFetch(`${API}/api/sdr/status`)
+      const data = await res.json()
+      if (data.success) {
+        setSdrStatus({ rodando: data.rodando, lead_atual: data.lead_atual, total: data.total, enviados: data.enviados })
+        // Quando SDR termina, atualiza o pipeline para refletir mudanças de status
+        if (wasRunning.current && !data.rodando) fetchPipeline()
+        wasRunning.current = data.rodando
+      }
+    } catch {}
+  }
+
+  useEffect(() => {
+    fetchPipeline()
+    pollSdrStatus()
+
+    // Polling: pipeline a cada 8s, SDR status a cada 3s
+    const timerPipeline = setInterval(fetchPipeline, 8000)
+    const timerSdr      = setInterval(pollSdrStatus, 3000)
+    return () => { clearInterval(timerPipeline); clearInterval(timerSdr) }
+  }, [])
 
   async function moveToNext(id, nextStatus) {
     try {
@@ -150,6 +186,22 @@ export default function Pipeline() {
         </div>
       </div>
 
+      {/* Banner SDR em execução */}
+      {sdrStatus.rodando && (
+        <div className="flex items-center gap-3 px-6 py-2.5 bg-[#FF6000]/10 border-b border-[#FF6000]/20 flex-shrink-0">
+          <Zap size={14} className="text-[#FF6000] animate-pulse flex-shrink-0" />
+          <span className="text-[#FF6000] text-xs font-semibold">
+            SDR em execução
+            {sdrStatus.lead_atual ? ` — disparando para "${sdrStatus.lead_atual}"` : ' — preparando disparos...'}
+          </span>
+          {sdrStatus.total > 0 && (
+            <span className="ml-auto text-[#FF6000]/60 text-xs font-mono">
+              {sdrStatus.enviados}/{sdrStatus.total}
+            </span>
+          )}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex items-center justify-center flex-1">
           <Loader2 size={28} className="animate-spin text-[#FF6000]" />
@@ -183,6 +235,7 @@ export default function Pipeline() {
                         lead={lead}
                         onMove={moveToNext}
                         onLose={moveToPerdido}
+                        sdrAtual={sdrStatus.rodando ? sdrStatus.lead_atual : null}
                       />
                     ))}
                   </div>

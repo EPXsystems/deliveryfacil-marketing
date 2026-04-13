@@ -282,6 +282,10 @@ export default function Automacao() {
   // ── SDR Iniciar ──────────────────────────────────────
   async function iniciarSdrAgora() {
     if (iniciandoSdr) return
+    if (!sdrCfg.ativo) {
+      showToast('SDR está pausado — ative o toggle antes de iniciar', 'erro')
+      return
+    }
     setIniciandoSdr(true)
     setProgressoSdr([])
     setFaseSdr('Conectando ao servidor...')
