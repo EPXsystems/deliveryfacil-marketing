@@ -108,7 +108,9 @@ export default function Automacao() {
   const [faseSdr, setFaseSdr]             = useState('')
   const [resumoSdr, setResumoSdr]         = useState(null)
   const [aguardandoSdr, setAguardandoSdr] = useState(null)
+  const [sdrEstado, setSdrEstado]         = useState(null) // polling persistente
   const scrollSdrRef = useRef(null)
+  const sdrPollingRef = useRef(null)
 
   // ── Seção 3: Remarketing ──────────────────────────────
   const [rmkCfg, setRmkCfg] = useState({
@@ -126,6 +128,26 @@ export default function Automacao() {
   // ── Seção 4: Funil ────────────────────────────────────
   const [funil, setFunil] = useState({})
 
+  async function pollSdrEstado() {
+    try {
+      const r = await authFetch(`${API}/api/sdr/estado`)
+      const d = await r.json()
+      if (d.success) {
+        setSdrEstado(d)
+        // sincroniza estado local com backend
+        if (d.rodando) setIniciandoSdr(true)
+        else if (!d.rodando && d.log?.length > 0) setIniciandoSdr(false)
+      }
+    } catch {}
+  }
+
+  async function pararSdr() {
+    try {
+      await authFetch(`${API}/api/sdr/parar`, { method: 'POST' })
+      showToast('Parada solicitada — aguardando lead atual...')
+    } catch { showToast('Erro ao solicitar parada', 'erro') }
+  }
+
   useEffect(() => {
     authFetch(`${API}/teste/status`)
       .then(r => r.json())
@@ -134,6 +156,9 @@ export default function Automacao() {
     fetchAgendamentos()
     fetchSdrConfig()
     fetchFunil()
+    pollSdrEstado()
+    sdrPollingRef.current = setInterval(pollSdrEstado, 2000)
+    return () => clearInterval(sdrPollingRef.current)
   }, [])
 
   useEffect(() => {
@@ -754,18 +779,28 @@ export default function Automacao() {
               >
                 {salvandoSdr ? 'Salvando...' : 'Salvar configurações'}
               </button>
-              <button
-                onClick={iniciarSdrAgora}
-                disabled={iniciandoSdr}
-                className={`flex-[1.4] flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl transition-colors ${
-                  iniciandoSdr
-                    ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
-                    : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
-                }`}
-              >
-                {iniciandoSdr ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-                {iniciandoSdr ? 'Disparando...' : '▶ Iniciar SDR Agora'}
-              </button>
+              {sdrEstado?.rodando ? (
+                <button
+                  onClick={pararSdr}
+                  className="flex-[1.4] flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl bg-red-500/15 border border-red-500/30 text-red-400 hover:bg-red-500/25 transition-colors"
+                >
+                  <XCircle size={15} />
+                  Parar SDR
+                </button>
+              ) : (
+                <button
+                  onClick={iniciarSdrAgora}
+                  disabled={iniciandoSdr && !sdrEstado?.rodando}
+                  className={`flex-[1.4] flex items-center justify-center gap-2 text-sm font-bold py-2.5 rounded-xl transition-colors ${
+                    iniciandoSdr
+                      ? 'bg-[#1a1a1a] text-[#333] cursor-not-allowed'
+                      : 'bg-[#FF6000] hover:bg-[#E55500] text-white'
+                  }`}
+                >
+                  {iniciandoSdr ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
+                  {iniciandoSdr ? 'Disparando...' : '▶ Iniciar SDR Agora'}
+                </button>
+              )}
             </div>
 
             {/* Info fila */}
@@ -779,44 +814,33 @@ export default function Automacao() {
             </div>
           </div>
 
-          {/* SSE Progress SDR */}
-          {(iniciandoSdr || progressoSdr.length > 0 || faseSdr) && (
+          {/* Progresso SDR — persiste via polling mesmo trocando de página */}
+          {(sdrEstado?.rodando || (sdrEstado?.log?.length > 0)) && (
             <div className="border border-[#1f1f1f] rounded-xl overflow-hidden mt-4">
-              {resumoSdr ? (
-                <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${resumoSdr.erro ? 'bg-red-400/5' : 'bg-emerald-400/5'}`}>
-                  {resumoSdr.erro
-                    ? <><XCircle size={14} className="text-red-400" /><span className="text-red-400 text-xs font-semibold">{resumoSdr.erro}</span></>
-                    : <><CheckCircle2 size={14} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold">Completo · {resumoSdr.enviados || 0} enviados · {resumoSdr.erros || 0} erros</span></>}
-                </div>
-              ) : faseSdr ? (
-                <div className="px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-2 bg-[#FF6000]/5">
-                  <Loader2 size={12} className="animate-spin text-[#FF6000]" />
-                  <span className="text-[#FF6000] text-xs font-semibold">{faseSdr}</span>
-                </div>
-              ) : null}
-              <div ref={scrollSdrRef} className="max-h-48 overflow-y-auto">
-                {progressoSdr.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3 px-4 py-2.5 border-b border-[#0D0D0D] last:border-0">
-                    <ProgressIcon status={p.status} />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-white text-xs font-medium truncate">{p.lead}</span>
-                        {p.status === 'enviando' && <span className="text-[#FF6000] text-[10px]">enviando...</span>}
-                        {p.status === 'ok'       && <span className="text-emerald-400 text-[10px]">enviado</span>}
-                        {p.status === 'erro'     && <span className="text-red-400 text-[10px] truncate max-w-[140px]">{p.erro}</span>}
-                      </div>
-                    </div>
-                    <span className="text-[#333] text-[10px] font-mono flex-shrink-0">{p.telefone}</span>
+              {/* Header status */}
+              <div className={`px-4 py-2.5 border-b border-[#1f1f1f] flex items-center gap-3 ${sdrEstado.rodando ? 'bg-[#FF6000]/5' : 'bg-[#0D0D0D]'}`}>
+                {sdrEstado.rodando
+                  ? <><Loader2 size={12} className="animate-spin text-[#FF6000]" /><span className="text-[#FF6000] text-xs font-semibold flex-1">Disparando {sdrEstado.atual || 0}/{sdrEstado.total || 0}{sdrEstado.lead_atual ? ` — ${sdrEstado.lead_atual}` : '...'}</span></>
+                  : <><CheckCircle2 size={12} className="text-emerald-400" /><span className="text-emerald-400 text-xs font-semibold flex-1">Concluído · {sdrEstado.enviados || 0} enviados · {sdrEstado.erros || 0} erros</span></>
+                }
+                {sdrEstado.total > 0 && (
+                  <span className="text-[#444] text-[10px] font-mono ml-auto">{sdrEstado.enviados}/{sdrEstado.total}</span>
+                )}
+              </div>
+              {/* Log entries */}
+              <div ref={scrollSdrRef} className="max-h-44 overflow-y-auto">
+                {(sdrEstado.log || []).map((entry, i) => (
+                  <div key={i} className="flex items-start gap-3 px-4 py-2 border-b border-[#0D0D0D] last:border-0">
+                    <span className="text-[#444] text-[10px] font-mono flex-shrink-0 mt-0.5">{entry.hora}</span>
+                    <span className={`text-xs flex-1 ${
+                      entry.msg.startsWith('✓') ? 'text-emerald-400' :
+                      entry.msg.startsWith('✗') ? 'text-red-400' :
+                      entry.msg.startsWith('⚠') ? 'text-yellow-400' :
+                      entry.msg.startsWith('⏳') ? 'text-[#FF6000]' :
+                      'text-[#666]'
+                    }`}>{entry.msg}</span>
                   </div>
                 ))}
-                {aguardandoSdr && (
-                  <div className="flex items-center gap-3 px-4 py-3 border-t border-[#1f1f1f]">
-                    <Clock size={12} className="text-[#FF6000] animate-pulse flex-shrink-0" />
-                    <span className="text-[#FF6000] text-xs">
-                      Aguardando {aguardandoSdr.segundos}s{aguardandoSdr.proximo ? ` antes de "${aguardandoSdr.proximo}"` : ''}...
-                    </span>
-                  </div>
-                )}
               </div>
             </div>
           )}
