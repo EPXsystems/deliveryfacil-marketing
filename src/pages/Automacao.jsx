@@ -75,7 +75,7 @@ export default function Automacao() {
   const [agendamentos, setAgendamentos] = useState([])
   const [novoAg, setNovoAg] = useState({
     categoria: '', cidade: '', bairro: '', delivery: false,
-    quantidade: 20, horario: '08:00', repetir: true,
+    quantidade: 20, horario: '08:00', repetir: true, tipo: 'recorrente',
   })
   const [salvandoAg, setSalvandoAg]   = useState(false)
   const [executando, setExecutando]   = useState(false)
@@ -159,6 +159,7 @@ export default function Automacao() {
       const payload = {
         ...novoAg,
         categoria: novoAg.delivery ? `${novoAg.categoria} delivery` : novoAg.categoria,
+        tipo: novoAg.tipo || 'recorrente',
       }
       const r = await authFetch(`${API}/api/automacao/agendamento`, {
         method: 'POST',
@@ -345,6 +346,27 @@ export default function Automacao() {
             </div>
           </div>
 
+          {/* Form — tipo: recorrente / único */}
+          <div className="flex items-center gap-3 mb-3">
+            <label className="text-[#666] text-xs font-medium">Tipo:</label>
+            {['recorrente', 'unico'].map(t => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setNovoAg(c => ({ ...c, tipo: t, repetir: t === 'recorrente' }))}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+                  novoAg.tipo === t
+                    ? t === 'recorrente'
+                      ? 'bg-emerald-400/15 border-emerald-400/40 text-emerald-400'
+                      : 'bg-yellow-400/15 border-yellow-400/40 text-yellow-400'
+                    : 'bg-[#0D0D0D] border-[#1f1f1f] text-[#555] hover:text-white'
+                }`}
+              >
+                {t === 'recorrente' ? 'Recorrente (diário)' : 'Único (uma vez)'}
+              </button>
+            ))}
+          </div>
+
           {/* Form — linha 2: delivery + quantidade + horário + repetir */}
           <div className="flex flex-wrap gap-3 items-end mb-4">
             <div>
@@ -473,21 +495,38 @@ export default function Automacao() {
           {agendamentos.length > 0 && (
             <div className="mt-4 space-y-2">
               <p className="text-[#444] text-[10px] font-semibold uppercase tracking-wider">Agendamentos salvos</p>
-              {agendamentos.map(ag => (
-                <div key={ag.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[#0D0D0D] border border-[#1a1a1a]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-[#FF6000] flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white text-xs font-medium">{ag.categoria} · {ag.bairro ? `${ag.bairro}, ` : ''}{ag.cidade}</p>
-                    <p className="text-[#444] text-[10px]">{ag.quantidade} leads · {ag.horario} · {ag.repetir ? 'diário' : 'uma vez'}</p>
+              {agendamentos.map(ag => {
+                const concluido = ag.status_ag === 'concluido'
+                const unico = ag.tipo === 'unico'
+                return (
+                  <div key={ag.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border ${concluido ? 'bg-[#0a0a0a] border-[#1a1a1a] opacity-60' : 'bg-[#0D0D0D] border-[#1a1a1a]'}`}>
+                    <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${concluido ? 'bg-[#444]' : unico ? 'bg-yellow-400' : 'bg-emerald-400'}`} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-medium">{ag.categoria} · {ag.bairro ? `${ag.bairro}, ` : ''}{ag.cidade}</p>
+                      <p className="text-[#444] text-[10px]">{ag.quantidade} leads · {ag.horario}</p>
+                    </div>
+                    {concluido ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#1f1f1f] text-[#555]">
+                        ✓ Concluído {ag.executado_em ? new Date(ag.executado_em).toLocaleDateString('pt-BR') : ''}
+                      </span>
+                    ) : unico ? (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-yellow-400/10 text-yellow-400">
+                        Único · {ag.horario}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-400/10 text-emerald-400">
+                        Diário · {ag.horario}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => deletarAgendamento(ag.id)}
+                      className="text-[#333] hover:text-red-400 transition-colors flex-shrink-0"
+                    >
+                      <Trash2 size={13} />
+                    </button>
                   </div>
-                  <button
-                    onClick={() => deletarAgendamento(ag.id)}
-                    className="text-[#333] hover:text-red-400 transition-colors flex-shrink-0"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>

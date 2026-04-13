@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react'
 import { MapPin, ChevronRight, Phone, Calendar, Loader2 } from 'lucide-react'
-import { fetchLeads, patchLeadStatus } from '../api'
+import { API, authFetch, patchLeadStatus } from '../api'
 
-const COLUMNS = ['Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Perdido']
+const COLUMNS = ['Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Sem WA', 'Perdido']
 
 const NEXT_STATUS = {
   Captado:   'Contatado',
@@ -10,6 +10,7 @@ const NEXT_STATUS = {
   Respondeu: 'Trial',
   Trial:     'Cliente',
   Cliente:   null,
+  'Sem WA':  null,
   Perdido:   null,
 }
 
@@ -19,6 +20,7 @@ const COLUMN_STYLE = {
   Respondeu: { dot: 'bg-purple-400',  border: 'border-purple-400/25',  badge: 'bg-purple-400/10 text-purple-400' },
   Trial:     { dot: 'bg-[#FF6000]',   border: 'border-[#FF6000]/25',   badge: 'bg-[#FF6000]/10 text-[#FF6000]' },
   Cliente:   { dot: 'bg-emerald-400', border: 'border-emerald-400/25', badge: 'bg-emerald-400/10 text-emerald-400' },
+  'Sem WA':  { dot: 'bg-rose-400',    border: 'border-rose-400/25',    badge: 'bg-rose-400/10 text-rose-400' },
   Perdido:   { dot: 'bg-[#555]',      border: 'border-[#2a2a2a]',      badge: 'bg-[#1f1f1f] text-[#555]' },
 }
 
@@ -37,7 +39,7 @@ function LeadCard({ lead, onMove, onLose }) {
 
       <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full mb-3 bg-blue-400/10 text-blue-400">
         <MapPin size={10} />
-        {lead.fonte || 'Google Maps'}
+        {lead.fonte || lead.categoria || 'Google Maps'}
       </span>
 
       <div className="space-y-1.5 mb-4">
@@ -75,38 +77,58 @@ function LeadCard({ lead, onMove, onLose }) {
 }
 
 export default function Pipeline() {
-  const [leads, setLeads]   = useState([])
+  const [byCol, setByCol]     = useState(COLUMNS.reduce((a, c) => ({ ...a, [c]: [] }), {}))
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchLeads()
-      .then(setLeads)
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+  async function fetchPipeline() {
+    try {
+      const res  = await authFetch(`${API}/api/pipeline`)
+      const data = await res.json()
+      if (data.success) setByCol(data.pipeline)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => { fetchPipeline() }, [])
 
   async function moveToNext(id, nextStatus) {
     try {
       await patchLeadStatus(id, nextStatus)
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, status: nextStatus } : l))
-    } catch (err) {
-      console.error(err)
-    }
+      setByCol(prev => {
+        const next = { ...prev }
+        for (const col of COLUMNS) {
+          const lead = next[col]?.find(l => l.id === id)
+          if (lead) {
+            next[col] = next[col].filter(l => l.id !== id)
+            next[nextStatus] = [{ ...lead, status: nextStatus }, ...(next[nextStatus] || [])]
+            break
+          }
+        }
+        return next
+      })
+    } catch (err) { console.error(err) }
   }
 
   async function moveToPerdido(id) {
     try {
       await patchLeadStatus(id, 'Perdido')
-      setLeads(prev => prev.map(l => l.id === id ? { ...l, status: 'Perdido' } : l))
-    } catch (err) {
-      console.error(err)
-    }
+      setByCol(prev => {
+        const next = { ...prev }
+        for (const col of COLUMNS) {
+          const lead = next[col]?.find(l => l.id === id)
+          if (lead) {
+            next[col] = next[col].filter(l => l.id !== id)
+            next['Perdido'] = [{ ...lead, status: 'Perdido' }, ...(next['Perdido'] || [])]
+            break
+          }
+        }
+        return next
+      })
+    } catch (err) { console.error(err) }
   }
-
-  const byCol = COLUMNS.reduce((acc, col) => {
-    acc[col] = leads.filter(l => l.status === col)
-    return acc
-  }, {})
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
@@ -115,7 +137,7 @@ export default function Pipeline() {
         <div>
           <h1 className="text-xl font-bold text-white">Pipeline de Leads</h1>
           <p className="text-[#555] text-sm mt-0.5">
-            {leads.filter(l => l.status !== 'Perdido').length} leads ativos no funil
+            {COLUMNS.filter(c => c !== 'Perdido').reduce((s, c) => s + (byCol[c]?.length || 0), 0)} leads ativos no funil
           </p>
         </div>
         <div className="flex items-center gap-3">

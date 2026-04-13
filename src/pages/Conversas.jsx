@@ -109,15 +109,33 @@ export default function Conversas() {
       const s = await waStatus()
       const connected = s.status === 'connected'
       setWaPhase(connected ? 'connected' : 'disconnected')
-      if (connected && conversas.length === 0) loadConversas()
     } catch { setWaPhase('disconnected') }
-  }, [conversas.length])
+  }, [])
 
   useEffect(() => {
     checkWA()
-    pollRef.current = setInterval(checkWA, 10000)
-    return () => clearInterval(pollRef.current)
+    const waTimer = setInterval(checkWA, 10000)
+    return () => clearInterval(waTimer)
   }, [])
+
+  // ── Auto-refresh: conversas a cada 5s, mensagens a cada 3s ──
+  const ativaRef = useRef(null)
+  useEffect(() => { ativaRef.current = ativa }, [ativa])
+
+  useEffect(() => {
+    if (waPhase !== 'connected') return
+    loadConversas()
+    const convTimer = setInterval(loadConversas, 5000)
+    return () => clearInterval(convTimer)
+  }, [waPhase])
+
+  useEffect(() => {
+    if (!ativa) return
+    const msgTimer = setInterval(() => {
+      if (ativaRef.current) loadMensagens(ativaRef.current.numero)
+    }, 3000)
+    return () => clearInterval(msgTimer)
+  }, [ativa?.numero])
 
   // ── Carregar conversas do SQLite ─────────────────────────
   async function loadConversas() {
@@ -386,21 +404,34 @@ export default function Conversas() {
                 </div>
               )}
               {!loadingMsgs && mensagens.map((msg, i) => {
-                const fromMe = msg.role === 'assistant'
-                const hora   = msg.criado_em
+                const fromMe  = msg.role === 'assistant'
+                const hora    = msg.criado_em
                   ? new Date(msg.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
                   : ''
+                const agente  = msg.agente_ativo || 'THOMAS'
+                const AGENTE_COR = {
+                  THOMAS: '#FF6000', SOFIA: '#60a5fa', ANA: '#c084fc',
+                  MAX: '#34d399', DOUGLAS: '#facc15',
+                }
+                const cor = AGENTE_COR[agente] || '#FF6000'
                 return (
                   <div key={msg.id || i} className={`flex ${fromMe ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[68%] flex flex-col gap-0.5 ${fromMe ? 'items-end' : 'items-start'}`}>
                       <div className={`px-4 py-2.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                         fromMe
-                          ? 'bg-[#FF6000]/90 text-white rounded-tr-sm'
+                          ? 'text-white rounded-tr-sm'
                           : 'bg-[#1a1a1a] border border-[#2a2a2a] text-[#ccc] rounded-tl-sm'
-                      }`}>
+                      }`} style={fromMe ? { backgroundColor: cor + 'e6' } : {}}>
                         {msg.conteudo}
                       </div>
-                      <span className="text-[#333] text-[10px] px-1">{hora}</span>
+                      <div className={`flex items-center gap-1.5 px-1 ${fromMe ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-[#333] text-[10px]">{hora}</span>
+                        {fromMe && (
+                          <span className="text-[10px] font-semibold" style={{ color: cor }}>
+                            {agente.charAt(0) + agente.slice(1).toLowerCase()}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )
