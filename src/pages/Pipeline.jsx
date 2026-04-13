@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { MapPin, ChevronRight, Phone, Calendar, Loader2, Zap } from 'lucide-react'
 import { API, authFetch, patchLeadStatus } from '../api'
 
-const COLUMNS = ['Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Sem WA', 'Perdido']
+const COLUMNS = ['Captado', 'Contatado', 'Respondeu', 'Trial', 'Cliente', 'Perdido', 'Sem WA']
 
 const NEXT_STATUS = {
   Captado:   'Contatado',
