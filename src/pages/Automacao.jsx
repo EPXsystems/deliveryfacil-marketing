@@ -116,7 +116,9 @@ export default function Automacao() {
   const [rmkCfg, setRmkCfg] = useState({
     ativo: true, d1: true, d3: true, d7: true, d30: false,
   })
-  const [salvandoRmk, setSalvandoRmk] = useState(false)
+  const [salvandoRmk, setSalvandoRmk]     = useState(false)
+  const [disparandoRmk, setDisparandoRmk] = useState(false)
+  const [resultadoRmk, setResultadoRmk]   = useState(null)
 
   // ── Toast ─────────────────────────────────────────────
   const [toast, setToast] = useState(null)
@@ -405,6 +407,24 @@ export default function Automacao() {
       })
     } catch {}
     setSalvandoRmk(false)
+  }
+
+  async function dispararRemarketingAgora() {
+    setDisparandoRmk(true)
+    setResultadoRmk(null)
+    try {
+      const res  = await authFetch(`${API}/api/ana/disparar-agora`, { method: 'POST' })
+      const data = await res.json()
+      if (data.success) {
+        setResultadoRmk(data)
+        showToast(data.total > 0 ? `Remarketing iniciado para ${data.total} lead(s)` : data.msg, 'ok')
+      } else {
+        showToast(data.error || 'Erro ao disparar remarketing', 'erro')
+      }
+    } catch (e) {
+      showToast('Erro ao conectar com servidor', 'erro')
+    }
+    setDisparandoRmk(false)
   }
 
   // ── Funil data ────────────────────────────────────────
@@ -914,10 +934,37 @@ export default function Automacao() {
           <button
             onClick={salvarRemarketing}
             disabled={salvandoRmk}
-            className="w-full bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
+            className="w-full bg-[#1f1f1f] hover:bg-[#2a2a2a] disabled:opacity-50 text-white text-sm font-semibold py-2.5 rounded-xl transition-colors mb-2"
           >
             {salvandoRmk ? 'Salvando...' : 'Salvar remarketing'}
           </button>
+
+          <button
+            onClick={dispararRemarketingAgora}
+            disabled={disparandoRmk}
+            className="w-full bg-[#FF6000]/10 hover:bg-[#FF6000]/20 disabled:opacity-50 text-[#FF6000] text-sm font-semibold py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2"
+          >
+            {disparandoRmk
+              ? <><span className="w-3 h-3 rounded-full border-2 border-[#FF6000]/40 border-t-[#FF6000] animate-spin" />Disparando...</>
+              : '📢 Disparar Remarketing Agora'}
+          </button>
+
+          {resultadoRmk && (
+            <div className="mt-2 p-3 bg-[#0D0D0D] rounded-xl border border-[#1a1a1a]">
+              {resultadoRmk.total > 0 ? (
+                <>
+                  <p className="text-emerald-400 text-xs font-semibold mb-1">✓ Remarketing iniciado para {resultadoRmk.total} lead(s)</p>
+                  <div className="space-y-0.5">
+                    {resultadoRmk.leads?.map(nome => (
+                      <p key={nome} className="text-[#555] text-[10px]">• {nome}</p>
+                    ))}
+                  </div>
+                </>
+              ) : (
+                <p className="text-[#555] text-xs">{resultadoRmk.msg}</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ── SEÇÃO 4: Funil de Conversão ───────────────────── */}
