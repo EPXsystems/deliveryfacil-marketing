@@ -141,6 +141,51 @@ function FunilBar({ funil }) {
   )
 }
 
+// ── Health Badge ──────────────────────────────────────────
+function HealthBadge() {
+  const [health, setHealth] = useState(null)
+
+  useEffect(() => {
+    const fetch_ = async () => {
+      try {
+        const r = await authFetch(`${API}/api/health/agente`)
+        const d = await r.json()
+        if (d.success) setHealth(d)
+      } catch {}
+    }
+    fetch_()
+    const id = setInterval(fetch_, 15000)
+    return () => clearInterval(id)
+  }, [])
+
+  if (!health) return null
+
+  const online   = health.agente_respondendo
+  const mins     = health.mins_desde_ultima_resposta
+  const label    = mins === null         ? 'Sem atividade'
+                 : mins < 1             ? 'Agora mesmo'
+                 : mins < 60            ? `há ${mins} min`
+                 : mins < 1440          ? `há ${Math.round(mins / 60)}h`
+                 : `há ${Math.round(mins / 1440)}d`
+
+  return (
+    <div className={`flex items-center gap-2 border rounded-lg px-3 py-2 text-xs ${
+      online
+        ? 'bg-emerald-400/5 border-emerald-400/20 text-emerald-400'
+        : 'bg-red-400/5 border-red-400/20 text-red-400'
+    }`}>
+      <span className={`w-2 h-2 rounded-full flex-shrink-0 ${online ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+      <span className="font-semibold">{online ? 'Agente ativo' : 'Agente offline'}</span>
+      <span className="opacity-60">· última resp. {label}</span>
+      {health.leads_pendentes > 0 && (
+        <span className="ml-1 bg-[#FF6000]/20 text-[#FF6000] px-1.5 py-0.5 rounded font-bold">
+          {health.leads_pendentes} pendente{health.leads_pendentes > 1 ? 's' : ''}
+        </span>
+      )}
+    </div>
+  )
+}
+
 // ── Main ──────────────────────────────────────────────────
 export default function Dashboard() {
   const [stats, setStats]           = useState(null)
@@ -185,10 +230,7 @@ export default function Dashboard() {
           <h1 className="text-xl font-bold text-white">Dashboard</h1>
           <p className="text-[#555] text-sm mt-0.5">Operação em tempo real</p>
         </div>
-        <div className="flex items-center gap-2 bg-[#111111] border border-[#1f1f1f] rounded-lg px-3 py-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[#888] text-xs">Ao vivo · 10s</span>
-        </div>
+        <HealthBadge />
       </div>
 
       {/* Seção 1 — KPIs */}
