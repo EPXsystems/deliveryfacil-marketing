@@ -95,6 +95,9 @@ export default function Conversas() {
   const [loadingConv, setLoadingConv] = useState(false)
   const [loadingMsgs, setLoadingMsgs] = useState(false)
   const [sending, setSending]         = useState(false)
+  const [pendentes, setPendentes]     = useState([])
+  const [retomarLoading, setRetomarLoading] = useState(false)
+  const [retomarOk, setRetomarOk]     = useState(null)
 
   // Modal + Toast
   const [modal, setModal]             = useState(null)
@@ -143,9 +146,24 @@ export default function Conversas() {
     try {
       const res  = await authFetch(`${API}/api/conversas`)
       const data = await res.json()
-      setConversas(data.conversas || [])
+      const lista = data.conversas || []
+      setConversas(lista)
+      // Detecta conversas onde último role é 'user' (lead aguarda resposta)
+      setPendentes(lista.filter(c => c.ultima_role === 'user' && !c.ultima_msg?.includes('[MENSAGEM AUTOMÁTICA')))
     } catch (e) { console.error(e) }
     finally { setLoadingConv(false) }
+  }
+
+  async function retomarConversas() {
+    setRetomarLoading(true)
+    setRetomarOk(null)
+    try {
+      const res  = await authFetch(`${API}/api/retomar-conversas`, { method: 'POST' })
+      const data = await res.json()
+      setRetomarOk(data)
+      setPendentes([])
+    } catch { setRetomarOk({ error: 'Erro ao conectar' }) }
+    setRetomarLoading(false)
   }
 
   // ── Carregar mensagens do SQLite ─────────────────────────
@@ -261,6 +279,32 @@ export default function Conversas() {
       <div className="flex h-screen overflow-hidden">
         {/* ── Coluna esquerda ── */}
         <div className="w-[350px] flex-shrink-0 border-r border-[#1f1f1f] flex flex-col bg-[#0D0D0D]">
+
+          {/* Banner conversas pendentes */}
+          {pendentes.length > 0 && !retomarOk && (
+            <div className="flex items-center gap-2 px-3 py-2.5 bg-[#FF6000]/10 border-b border-[#FF6000]/20">
+              <AlertTriangle size={13} className="text-[#FF6000] flex-shrink-0" />
+              <span className="text-[#FF6000] text-[11px] font-semibold flex-1">
+                {pendentes.length} lead{pendentes.length > 1 ? 's' : ''} aguardando resposta
+              </span>
+              <button
+                onClick={retomarConversas}
+                disabled={retomarLoading}
+                className="text-[10px] font-bold bg-[#FF6000] hover:bg-[#FF6000]/90 text-black px-2.5 py-1 rounded-lg disabled:opacity-50 whitespace-nowrap transition-colors"
+              >
+                {retomarLoading ? '...' : 'Retomar agora'}
+              </button>
+            </div>
+          )}
+          {retomarOk?.total > 0 && (
+            <div className="flex items-center gap-2 px-3 py-2 bg-emerald-400/10 border-b border-emerald-400/20">
+              <CheckCircle2 size={13} className="text-emerald-400 flex-shrink-0" />
+              <span className="text-emerald-400 text-[11px] font-semibold">
+                Thomas respondendo {retomarOk.total} conversa{retomarOk.total > 1 ? 's' : ''}...
+              </span>
+            </div>
+          )}
+
           <div className="px-4 py-4 border-b border-[#1f1f1f]">
             <div className="flex items-center justify-between mb-3">
               <h1 className="text-white font-bold text-base">Conversas</h1>
