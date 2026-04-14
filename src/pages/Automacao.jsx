@@ -395,7 +395,7 @@ export default function Automacao() {
   async function salvarRemarketing() {
     setSalvandoRmk(true)
     try {
-      await authFetch(`${API}/api/automacao/sdr/config`, {
+      const res = await authFetch(`${API}/api/automacao/sdr/config`, {
         method: 'POST',
         body: JSON.stringify({
           remarketing_ativo: rmkCfg.ativo,
@@ -405,7 +405,9 @@ export default function Automacao() {
           remarketing_d30:   rmkCfg.d30,
         }),
       })
-    } catch {}
+      const data = await res.json()
+      showToast(data.success ? 'Remarketing salvo!' : (data.error || 'Erro ao salvar'), data.success ? 'ok' : 'erro')
+    } catch { showToast('Erro ao conectar com servidor', 'erro') }
     setSalvandoRmk(false)
   }
 
