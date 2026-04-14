@@ -127,31 +127,35 @@ export default function Conversas() {
 
   useEffect(() => {
     if (waPhase !== 'connected') return
-    loadConversas()
-    const convTimer = setInterval(loadConversas, 5000)
+    loadConversas()                                           // inicial: mostra spinner
+    const convTimer = setInterval(() => loadConversas(true), 5000) // silencioso
     return () => clearInterval(convTimer)
   }, [waPhase])
 
   useEffect(() => {
     if (!ativa) return
     const msgTimer = setInterval(() => {
-      if (ativaRef.current) loadMensagens(ativaRef.current.numero)
+      if (ativaRef.current) loadMensagens(ativaRef.current.numero, true) // silencioso
     }, 3000)
     return () => clearInterval(msgTimer)
   }, [ativa?.numero])
 
   // ── Carregar conversas do SQLite ─────────────────────────
-  async function loadConversas() {
-    setLoadingConv(true)
+  async function loadConversas(silent = false) {
+    if (!silent) setLoadingConv(true)
     try {
       const res  = await authFetch(`${API}/api/conversas`)
       const data = await res.json()
       const lista = data.conversas || []
-      setConversas(lista)
-      // Detecta conversas onde último role é 'user' (lead aguarda resposta)
-      setPendentes(lista.filter(c => c.ultima_role === 'user' && !c.ultima_msg?.includes('[MENSAGEM AUTOMÁTICA')))
-    } catch (e) { console.error(e) }
-    finally { setLoadingConv(false) }
+      // Só re-renderiza se mudou (evita piscar no polling)
+      setConversas(prev => {
+        const changed = JSON.stringify(prev) !== JSON.stringify(lista)
+        return changed ? lista : prev
+      })
+      setPendentes(lista.filter(c => c.nao_lidas > 0 && c.ultima_role === 'user'
+        && !c.ultima_msg?.includes('[MENSAGEM AUTOMÁTICA')))
+    } catch (e) { if (!silent) console.error(e) }
+    finally { if (!silent) setLoadingConv(false) }
   }
 
   async function retomarConversas() {
@@ -167,21 +171,30 @@ export default function Conversas() {
   }
 
   // ── Carregar mensagens do SQLite ─────────────────────────
-  async function loadMensagens(numero) {
-    setLoadingMsgs(true)
-    setMensagens([])
+  async function loadMensagens(numero, silent = false) {
+    if (!silent) { setLoadingMsgs(true); setMensagens([]) }
     try {
       const res  = await authFetch(`${API}/api/conversas/${encodeURIComponent(numero)}/mensagens`)
       const data = await res.json()
-      setMensagens(data.mensagens || [])
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
-    } catch (e) { console.error(e) }
-    finally { setLoadingMsgs(false) }
+      const msgs = data.mensagens || []
+      if (silent) {
+        // Só atualiza se chegou mensagem nova (não apaga o que está)
+        setMensagens(prev => msgs.length !== prev.length ? msgs : prev)
+      } else {
+        setMensagens(msgs)
+        setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+      }
+    } catch (e) { if (!silent) console.error(e) }
+    finally { if (!silent) setLoadingMsgs(false) }
   }
 
   function selectConv(conv) {
     setAtiva(conv)
     loadMensagens(conv.numero)
+    // Marca como lido
+    authFetch(`${API}/api/conversas/${encodeURIComponent(conv.numero)}/ler`, { method: 'POST' }).catch(() => {})
+    setConversas(prev => prev.map(c => c.numero === conv.numero ? { ...c, nao_lidas: 0 } : c))
+    setPendentes(prev => prev.filter(p => p.numero !== conv.numero))
   }
 
   // ── Enviar mensagem (Evolution API) ──────────────────────
@@ -375,11 +388,18 @@ export default function Conversas() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-0.5">
-                          <span className="text-white text-xs font-semibold truncate pr-2">{nome}</span>
-                          <span className="text-[#444] text-[10px] flex-shrink-0">{timeLabel(conv.ultima_hora)}</span>
+                          <span className={`text-xs font-semibold truncate pr-2 ${conv.nao_lidas > 0 ? 'text-white' : 'text-[#aaa]'}`}>{nome}</span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {conv.nao_lidas > 0 && (
+                              <span className="w-4 h-4 rounded-full bg-[#FF6000] text-[9px] font-bold text-black flex items-center justify-center">
+                                {conv.nao_lidas > 9 ? '9+' : conv.nao_lidas}
+                              </span>
+                            )}
+                            <span className="text-[#444] text-[10px]">{timeLabel(conv.ultima_hora)}</span>
+                          </div>
                         </div>
-                        <p className="text-[#555] text-[11px] truncate mb-1">
-                          {conv.ultima_role === 'assistant' ? '🤖 ' : ''}{conv.ultima_msg || '...'}
+                        <p className={`text-[11px] truncate mb-1 ${conv.nao_lidas > 0 && conv.ultima_role === 'user' ? 'text-white font-medium' : 'text-[#555]'}`}>
+                          {conv.ultima_role === 'assistant' ? '🤖 ' : '💬 '}{conv.ultima_msg || '...'}
                         </p>
                         <div className="flex items-center gap-1.5">
                           <span className="text-[9px] text-[#333] font-mono">{formatNumero(conv.numero)}</span>
